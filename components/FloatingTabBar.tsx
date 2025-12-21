@@ -95,11 +95,11 @@ export default function FloatingTabBar({
     }
   }, [activeTabIndex, animatedValue]);
 
-  const handleTabPress = (route: Href) => {
+  const handleTabPress = React.useCallback((route: Href) => {
     console.log('Tab pressed, navigating to:', route);
-    // Use replace instead of push to ensure proper navigation state
-    router.replace(route);
-  };
+    // Use push for more reliable navigation
+    router.push(route);
+  }, [router]);
 
   const tabWidthPercent = ((100 / tabs.length) - 1).toFixed(2);
 
@@ -156,82 +156,81 @@ export default function FloatingTabBar({
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['bottom']} pointerEvents="box-none">
-      <View style={[
-        styles.container,
-        {
-          width: containerWidth,
-          marginBottom: bottomMargin ?? 20
-        }
-      ]} pointerEvents="auto">
-        <BlurView
-          intensity={80}
-          style={[dynamicStyles.blurContainer, { borderRadius }]}
-          pointerEvents="auto"
-        >
-          <View style={dynamicStyles.background} pointerEvents="none" />
-          <Animated.View style={[dynamicStyles.indicator, indicatorStyle]} pointerEvents="none" />
-          <View style={styles.tabsContainer} pointerEvents="auto">
-            {tabs.map((tab, index) => {
-              const isActive = activeTabIndex === index;
+    <View style={styles.outerContainer} pointerEvents="box-none">
+      <SafeAreaView style={styles.safeArea} edges={['bottom']} pointerEvents="box-none">
+        <View style={[
+          styles.container,
+          {
+            width: containerWidth,
+            marginBottom: bottomMargin ?? 20
+          }
+        ]}>
+          <BlurView
+            intensity={80}
+            style={[dynamicStyles.blurContainer, { borderRadius }]}
+          >
+            <View style={dynamicStyles.background} pointerEvents="none" />
+            <Animated.View style={[dynamicStyles.indicator, indicatorStyle]} pointerEvents="none" />
+            <View style={styles.tabsContainer}>
+              {tabs.map((tab, index) => {
+                const isActive = activeTabIndex === index;
 
-              return (
-                <React.Fragment key={index}>
-                <TouchableOpacity
-                  style={styles.tab}
-                  onPress={() => handleTabPress(tab.route)}
-                  activeOpacity={0.7}
-                  pointerEvents="auto"
-                >
-                  <View style={styles.tabContent} pointerEvents="none">
-                    <IconSymbol
-                      android_material_icon_name={tab.icon}
-                      ios_icon_name={tab.icon}
-                      size={24}
-                      color={isActive ? theme.colors.primary : (theme.dark ? '#98989D' : '#000000')}
-                    />
-                    <Text
-                      style={[
-                        styles.tabLabel,
-                        { color: theme.dark ? '#98989D' : '#8E8E93' },
-                        isActive && { color: theme.colors.primary, fontWeight: '600' },
-                      ]}
+                return (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={styles.tab}
+                      onPress={() => handleTabPress(tab.route)}
+                      activeOpacity={0.7}
                     >
-                      {tab.label}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-                </React.Fragment>
-              );
-            })}
-          </View>
-        </BlurView>
-      </View>
-    </SafeAreaView>
+                      <View style={styles.tabContent} pointerEvents="none">
+                        <IconSymbol
+                          android_material_icon_name={tab.icon}
+                          ios_icon_name={tab.icon}
+                          size={24}
+                          color={isActive ? theme.colors.primary : (theme.dark ? '#98989D' : '#000000')}
+                        />
+                        <Text
+                          style={[
+                            styles.tabLabel,
+                            { color: theme.dark ? '#98989D' : '#8E8E93' },
+                            isActive && { color: theme.colors.primary, fontWeight: '600' },
+                          ]}
+                        >
+                          {tab.label}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                );
+              })}
+            </View>
+          </BlurView>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  outerContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     zIndex: 1000,
-    alignItems: 'center', // Center the content
+  },
+  safeArea: {
+    alignItems: 'center',
   },
   container: {
     marginHorizontal: 20,
     alignSelf: 'center',
-    // width and marginBottom handled dynamically via props
   },
   blurContainer: {
     overflow: 'hidden',
-    // borderRadius and other styling applied dynamically
   },
   background: {
     ...StyleSheet.absoluteFillObject,
-    // Dynamic styling applied in component
   },
   indicator: {
     position: 'absolute',
@@ -240,7 +239,6 @@ const styles = StyleSheet.create({
     bottom: 4,
     borderRadius: 27,
     width: `${(100 / 2) - 1}%`, // Default for 2 tabs, will be overridden by dynamic styles
-    // Dynamic styling applied in component
   },
   tabsContainer: {
     flexDirection: 'row',
@@ -263,6 +261,5 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '500',
     marginTop: 2,
-    // Dynamic styling applied in component
   },
 });
