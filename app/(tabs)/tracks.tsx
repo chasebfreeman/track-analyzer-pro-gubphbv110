@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { useTheme } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { StorageService } from '@/utils/storage';
 import { Track } from '@/types/TrackData';
@@ -18,6 +19,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 
 export default function TracksScreen() {
   const theme = useTheme();
+  const router = useRouter();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [trackName, setTrackName] = useState('');
@@ -82,6 +84,14 @@ export default function TracksScreen() {
     );
   };
 
+  const handleTrackPress = (track: Track) => {
+    console.log('Track pressed:', track.name);
+    router.push({
+      pathname: '/(tabs)/record',
+      params: { trackId: track.id, trackName: track.name },
+    });
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView
@@ -143,7 +153,11 @@ export default function TracksScreen() {
           <View style={styles.tracksList}>
             {tracks.map((track, index) => (
               <React.Fragment key={index}>
-                <View style={[styles.trackCard, { backgroundColor: colors.card }]}>
+                <TouchableOpacity
+                  style={[styles.trackCard, { backgroundColor: colors.card }]}
+                  onPress={() => handleTrackPress(track)}
+                  activeOpacity={0.7}
+                >
                   <View style={styles.trackInfo}>
                     <View style={styles.trackIcon}>
                       <IconSymbol
@@ -166,10 +180,19 @@ export default function TracksScreen() {
                         Added {new Date(track.createdAt).toLocaleDateString()}
                       </Text>
                     </View>
+                    <IconSymbol
+                      ios_icon_name="chevron.right"
+                      android_material_icon_name="chevron_right"
+                      size={20}
+                      color={colors.textSecondary}
+                    />
                   </View>
                   <TouchableOpacity
                     style={styles.deleteButton}
-                    onPress={() => handleDeleteTrack(track)}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleDeleteTrack(track);
+                    }}
                   >
                     <IconSymbol
                       ios_icon_name="trash"
@@ -178,7 +201,7 @@ export default function TracksScreen() {
                       color={colors.error}
                     />
                   </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
               </React.Fragment>
             ))}
           </View>

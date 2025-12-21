@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { useTheme } from '@react-navigation/native';
+import { useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { colors } from '@/styles/commonStyles';
 import { StorageService } from '@/utils/storage';
@@ -20,6 +21,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 
 export default function RecordScreen() {
   const theme = useTheme();
+  const params = useLocalSearchParams();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showTrackPicker, setShowTrackPicker] = useState(false);
@@ -49,6 +51,16 @@ export default function RecordScreen() {
   useEffect(() => {
     loadTracks();
   }, []);
+
+  useEffect(() => {
+    if (params.trackId && tracks.length > 0) {
+      const track = tracks.find((t) => t.id === params.trackId);
+      if (track) {
+        console.log('Auto-selecting track from params:', track.name);
+        setSelectedTrack(track);
+      }
+    }
+  }, [params.trackId, tracks]);
 
   const loadTracks = async () => {
     const loadedTracks = await StorageService.getTracks();
