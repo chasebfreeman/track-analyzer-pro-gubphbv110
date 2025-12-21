@@ -25,6 +25,7 @@ export default function RecordScreen() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showTrackPicker, setShowTrackPicker] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [leftLane, setLeftLane] = useState<LaneReading>({
     trackTemp: '',
@@ -53,18 +54,25 @@ export default function RecordScreen() {
   }, []);
 
   useEffect(() => {
-    if (params.trackId && tracks.length > 0) {
+    // Only try to auto-select after tracks are loaded
+    if (!isLoading && params.trackId && tracks.length > 0) {
       const track = tracks.find((t) => t.id === params.trackId);
       if (track) {
         console.log('Auto-selecting track from params:', track.name);
         setSelectedTrack(track);
+      } else {
+        console.log('Track not found with id:', params.trackId);
       }
     }
-  }, [params.trackId, tracks]);
+  }, [params.trackId, tracks, isLoading]);
 
   const loadTracks = async () => {
+    setIsLoading(true);
+    console.log('Loading tracks...');
     const loadedTracks = await StorageService.getTracks();
+    console.log('Loaded tracks:', loadedTracks.length);
     setTracks(loadedTracks.sort((a, b) => a.name.localeCompare(b.name)));
+    setIsLoading(false);
   };
 
   const pickImage = async (lane: 'left' | 'right') => {
@@ -143,11 +151,11 @@ export default function RecordScreen() {
     laneType: 'left' | 'right'
   ) => (
     <View style={[styles.laneSection, { backgroundColor: colors.card }]}>
-      <Text style={[styles.laneTitle, { color: theme.colors.text }]}>{title}</Text>
+      <Text style={styles.laneTitle}>{title}</Text>
 
       <Text style={styles.label}>Track Temp (°F)</Text>
       <TextInput
-        style={[styles.input, { color: theme.colors.text }]}
+        style={styles.input}
         placeholder="e.g., 85"
         placeholderTextColor={colors.textSecondary}
         value={lane.trackTemp}
@@ -157,7 +165,7 @@ export default function RecordScreen() {
 
       <Text style={styles.label}>UV Index</Text>
       <TextInput
-        style={[styles.input, { color: theme.colors.text }]}
+        style={styles.input}
         placeholder="e.g., 7"
         placeholderTextColor={colors.textSecondary}
         value={lane.uvIndex}
@@ -167,7 +175,7 @@ export default function RecordScreen() {
 
       <Text style={styles.label}>Keg SL</Text>
       <TextInput
-        style={[styles.input, { color: theme.colors.text }]}
+        style={styles.input}
         placeholder="Enter value"
         placeholderTextColor={colors.textSecondary}
         value={lane.kegSL}
@@ -176,7 +184,7 @@ export default function RecordScreen() {
 
       <Text style={styles.label}>Keg Out</Text>
       <TextInput
-        style={[styles.input, { color: theme.colors.text }]}
+        style={styles.input}
         placeholder="Enter value"
         placeholderTextColor={colors.textSecondary}
         value={lane.kegOut}
@@ -185,7 +193,7 @@ export default function RecordScreen() {
 
       <Text style={styles.label}>Grippo SL</Text>
       <TextInput
-        style={[styles.input, { color: theme.colors.text }]}
+        style={styles.input}
         placeholder="Enter value"
         placeholderTextColor={colors.textSecondary}
         value={lane.grippoSL}
@@ -194,7 +202,7 @@ export default function RecordScreen() {
 
       <Text style={styles.label}>Grippo Out</Text>
       <TextInput
-        style={[styles.input, { color: theme.colors.text }]}
+        style={styles.input}
         placeholder="Enter value"
         placeholderTextColor={colors.textSecondary}
         value={lane.grippoOut}
@@ -203,7 +211,7 @@ export default function RecordScreen() {
 
       <Text style={styles.label}>Shine</Text>
       <TextInput
-        style={[styles.input, { color: theme.colors.text }]}
+        style={styles.input}
         placeholder="Enter value"
         placeholderTextColor={colors.textSecondary}
         value={lane.shine}
@@ -212,7 +220,7 @@ export default function RecordScreen() {
 
       <Text style={styles.label}>Notes</Text>
       <TextInput
-        style={[styles.input, styles.notesInput, { color: theme.colors.text }]}
+        style={[styles.input, styles.notesInput]}
         placeholder="Additional notes..."
         placeholderTextColor={colors.textSecondary}
         value={lane.notes}
@@ -257,21 +265,21 @@ export default function RecordScreen() {
             style={styles.trackButton}
             onPress={() => setShowTrackPicker(!showTrackPicker)}
           >
-            <Text style={[styles.trackButtonText, { color: theme.colors.text }]}>
+            <Text style={styles.trackButtonText}>
               {selectedTrack ? selectedTrack.name : 'Choose a track...'}
             </Text>
             <IconSymbol
               ios_icon_name="chevron.down"
               android_material_icon_name={showTrackPicker ? 'expand_less' : 'expand_more'}
               size={20}
-              color={colors.textSecondary}
+              color={colors.text}
             />
           </TouchableOpacity>
 
           {showTrackPicker && (
             <View style={styles.trackList}>
               {tracks.length === 0 ? (
-                <Text style={[styles.noTracksText, { color: colors.textSecondary }]}>
+                <Text style={styles.noTracksText}>
                   No tracks available. Add a track first in the Tracks tab.
                 </Text>
               ) : (
@@ -290,14 +298,13 @@ export default function RecordScreen() {
                       <Text
                         style={[
                           styles.trackOptionText,
-                          { color: theme.colors.text },
                           selectedTrack?.id === track.id && styles.trackOptionTextSelected,
                         ]}
                       >
                         {track.name}
                       </Text>
                       {track.location && (
-                        <Text style={[styles.trackOptionLocation, { color: colors.textSecondary }]}>
+                        <Text style={styles.trackOptionLocation}>
                           {track.location}
                         </Text>
                       )}
@@ -373,6 +380,7 @@ const styles = StyleSheet.create({
   },
   trackButtonText: {
     fontSize: 16,
+    color: colors.text,
   },
   trackList: {
     marginTop: 12,
@@ -393,6 +401,7 @@ const styles = StyleSheet.create({
   trackOptionText: {
     fontSize: 16,
     fontWeight: '500',
+    color: colors.text,
   },
   trackOptionTextSelected: {
     color: '#ffffff',
@@ -400,11 +409,13 @@ const styles = StyleSheet.create({
   trackOptionLocation: {
     fontSize: 12,
     marginTop: 2,
+    color: colors.textSecondary,
   },
   noTracksText: {
     fontSize: 14,
     textAlign: 'center',
     paddingVertical: 12,
+    color: colors.textSecondary,
   },
   laneSection: {
     borderRadius: 12,
@@ -417,6 +428,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 16,
+    color: colors.text,
   },
   input: {
     backgroundColor: colors.background,
@@ -427,6 +439,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     fontSize: 16,
     marginBottom: 12,
+    color: colors.text,
   },
   notesInput: {
     minHeight: 80,
