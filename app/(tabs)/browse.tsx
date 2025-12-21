@@ -9,14 +9,12 @@ import {
   Image,
   Platform,
 } from 'react-native';
-import { useTheme } from '@react-navigation/native';
 import { colors } from '@/styles/commonStyles';
 import { StorageService } from '@/utils/storage';
 import { Track, TrackReading, DayReadings } from '@/types/TrackData';
 import { IconSymbol } from '@/components/IconSymbol';
 
 export default function BrowseScreen() {
-  const theme = useTheme();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [readings, setReadings] = useState<TrackReading[]>([]);
@@ -65,54 +63,54 @@ export default function BrowseScreen() {
 
   const renderLaneData = (lane: any, title: string) => (
     <View style={styles.laneData}>
-      <Text style={[styles.laneDataTitle, { color: colors.primary }]}>{title}</Text>
+      <Text style={styles.laneDataTitle}>{title}</Text>
       <View style={styles.dataGrid}>
         <View style={styles.dataRow}>
-          <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>Track Temp:</Text>
-          <Text style={[styles.dataValue, { color: theme.colors.text }]}>
+          <Text style={styles.dataLabel}>Track Temp:</Text>
+          <Text style={styles.dataValue}>
             {lane.trackTemp || 'N/A'}°F
           </Text>
         </View>
         <View style={styles.dataRow}>
-          <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>UV Index:</Text>
-          <Text style={[styles.dataValue, { color: theme.colors.text }]}>
+          <Text style={styles.dataLabel}>UV Index:</Text>
+          <Text style={styles.dataValue}>
             {lane.uvIndex || 'N/A'}
           </Text>
         </View>
         <View style={styles.dataRow}>
-          <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>Keg SL:</Text>
-          <Text style={[styles.dataValue, { color: theme.colors.text }]}>
+          <Text style={styles.dataLabel}>Keg SL:</Text>
+          <Text style={styles.dataValue}>
             {lane.kegSL || 'N/A'}
           </Text>
         </View>
         <View style={styles.dataRow}>
-          <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>Keg Out:</Text>
-          <Text style={[styles.dataValue, { color: theme.colors.text }]}>
+          <Text style={styles.dataLabel}>Keg Out:</Text>
+          <Text style={styles.dataValue}>
             {lane.kegOut || 'N/A'}
           </Text>
         </View>
         <View style={styles.dataRow}>
-          <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>Grippo SL:</Text>
-          <Text style={[styles.dataValue, { color: theme.colors.text }]}>
+          <Text style={styles.dataLabel}>Grippo SL:</Text>
+          <Text style={styles.dataValue}>
             {lane.grippoSL || 'N/A'}
           </Text>
         </View>
         <View style={styles.dataRow}>
-          <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>Grippo Out:</Text>
-          <Text style={[styles.dataValue, { color: theme.colors.text }]}>
+          <Text style={styles.dataLabel}>Grippo Out:</Text>
+          <Text style={styles.dataValue}>
             {lane.grippoOut || 'N/A'}
           </Text>
         </View>
         <View style={styles.dataRow}>
-          <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>Shine:</Text>
-          <Text style={[styles.dataValue, { color: theme.colors.text }]}>
+          <Text style={styles.dataLabel}>Shine:</Text>
+          <Text style={styles.dataValue}>
             {lane.shine || 'N/A'}
           </Text>
         </View>
         {lane.notes && (
           <View style={styles.notesRow}>
-            <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>Notes:</Text>
-            <Text style={[styles.notesValue, { color: theme.colors.text }]}>
+            <Text style={styles.dataLabel}>Notes:</Text>
+            <Text style={styles.notesValue}>
               {lane.notes}
             </Text>
           </View>
@@ -125,21 +123,21 @@ export default function BrowseScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.title, { color: theme.colors.text }]}>Browse Data</Text>
+        <Text style={styles.title}>Browse Data</Text>
 
-        <View style={[styles.trackSelector, { backgroundColor: colors.card }]}>
+        <View style={styles.trackSelector}>
           <Text style={styles.label}>Select Track</Text>
           <TouchableOpacity
             style={styles.trackButton}
             onPress={() => setShowTrackPicker(!showTrackPicker)}
           >
-            <Text style={[styles.trackButtonText, { color: theme.colors.text }]}>
+            <Text style={styles.trackButtonText}>
               {selectedTrack ? selectedTrack.name : 'Choose a track...'}
             </Text>
             <IconSymbol
@@ -167,7 +165,6 @@ export default function BrowseScreen() {
                     <Text
                       style={[
                         styles.trackOptionText,
-                        { color: theme.colors.text },
                         selectedTrack?.id === track.id && styles.trackOptionTextSelected,
                       ]}
                     >
@@ -188,7 +185,7 @@ export default function BrowseScreen() {
               size={64}
               color={colors.textSecondary}
             />
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+            <Text style={styles.emptyText}>
               No readings yet for this track.{'\n'}Start recording data to see it here!
             </Text>
           </View>
@@ -197,12 +194,12 @@ export default function BrowseScreen() {
             {groupedReadings.map((dayGroup, dayIndex) => (
               <React.Fragment key={dayIndex}>
                 <View style={styles.daySection}>
-                  <Text style={[styles.dayHeader, { color: theme.colors.text }]}>
+                  <Text style={styles.dayHeader}>
                     {dayGroup.date}
                   </Text>
                   {dayGroup.readings.map((reading, readingIndex) => (
                     <React.Fragment key={readingIndex}>
-                      <View style={[styles.readingCard, { backgroundColor: colors.card }]}>
+                      <View style={styles.readingCard}>
                         <TouchableOpacity
                           style={styles.readingHeader}
                           onPress={() =>
@@ -218,7 +215,7 @@ export default function BrowseScreen() {
                               size={20}
                               color={colors.primary}
                             />
-                            <Text style={[styles.readingTime, { color: theme.colors.text }]}>
+                            <Text style={styles.readingTime}>
                               {reading.time}
                             </Text>
                           </View>
@@ -254,6 +251,7 @@ export default function BrowseScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
@@ -267,8 +265,10 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
     marginBottom: 20,
+    color: colors.text,
   },
   trackSelector: {
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
@@ -294,6 +294,7 @@ const styles = StyleSheet.create({
   },
   trackButtonText: {
     fontSize: 16,
+    color: colors.text,
   },
   trackList: {
     marginTop: 12,
@@ -314,6 +315,7 @@ const styles = StyleSheet.create({
   trackOptionText: {
     fontSize: 16,
     fontWeight: '500',
+    color: colors.text,
   },
   trackOptionTextSelected: {
     color: '#ffffff',
@@ -329,6 +331,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 40,
     lineHeight: 24,
+    color: colors.textSecondary,
   },
   readingsList: {
     gap: 20,
@@ -340,8 +343,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 12,
+    color: colors.text,
   },
   readingCard: {
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -361,6 +366,7 @@ const styles = StyleSheet.create({
   readingTime: {
     fontSize: 16,
     fontWeight: '600',
+    color: colors.text,
   },
   readingDetails: {
     marginTop: 16,
@@ -375,6 +381,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 12,
+    color: colors.primary,
   },
   dataGrid: {
     gap: 8,
@@ -387,10 +394,12 @@ const styles = StyleSheet.create({
   dataLabel: {
     fontSize: 14,
     fontWeight: '500',
+    color: colors.textSecondary,
   },
   dataValue: {
     fontSize: 14,
     fontWeight: '600',
+    color: colors.text,
   },
   notesRow: {
     marginTop: 8,
@@ -399,6 +408,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4,
     lineHeight: 20,
+    color: colors.text,
   },
   laneImage: {
     width: '100%',

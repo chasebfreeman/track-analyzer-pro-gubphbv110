@@ -11,7 +11,6 @@ import {
   Image,
   Platform,
 } from 'react-native';
-import { useTheme } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { colors } from '@/styles/commonStyles';
@@ -20,7 +19,6 @@ import { Track, TrackReading, LaneReading } from '@/types/TrackData';
 import { IconSymbol } from '@/components/IconSymbol';
 
 export default function RecordScreen() {
-  const theme = useTheme();
   const params = useLocalSearchParams();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
@@ -150,7 +148,7 @@ export default function RecordScreen() {
     title: string,
     laneType: 'left' | 'right'
   ) => (
-    <View style={[styles.laneSection, { backgroundColor: colors.card }]}>
+    <View style={styles.laneSection}>
       <Text style={styles.laneTitle}>{title}</Text>
 
       <Text style={styles.label}>Track Temp (°F)</Text>
@@ -251,15 +249,15 @@ export default function RecordScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.title, { color: theme.colors.text }]}>Record Data</Text>
+        <Text style={styles.title}>Record Data</Text>
 
-        <View style={[styles.trackSelector, { backgroundColor: colors.card }]}>
+        <View style={styles.trackSelector}>
           <Text style={styles.label}>Select Track *</Text>
           <TouchableOpacity
             style={styles.trackButton}
@@ -340,6 +338,7 @@ export default function RecordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
@@ -353,8 +352,10 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
     marginBottom: 20,
+    color: colors.text,
   },
   trackSelector: {
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
@@ -418,6 +419,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   laneSection: {
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,

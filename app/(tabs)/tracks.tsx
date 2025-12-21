@@ -10,7 +10,6 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { useTheme } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { StorageService } from '@/utils/storage';
@@ -18,7 +17,6 @@ import { Track } from '@/types/TrackData';
 import { IconSymbol } from '@/components/IconSymbol';
 
 export default function TracksScreen() {
-  const theme = useTheme();
   const router = useRouter();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -93,14 +91,14 @@ export default function TracksScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.colors.text }]}>Race Tracks</Text>
+          <Text style={styles.title}>Race Tracks</Text>
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => setShowAddForm(!showAddForm)}
@@ -115,17 +113,17 @@ export default function TracksScreen() {
         </View>
 
         {showAddForm && (
-          <View style={[styles.addForm, { backgroundColor: colors.card }]}>
+          <View style={styles.addForm}>
             <Text style={styles.formTitle}>Add New Track</Text>
             <TextInput
-              style={[styles.input, { color: theme.colors.text }]}
+              style={styles.input}
               placeholder="Track Name *"
               placeholderTextColor={colors.textSecondary}
               value={trackName}
               onChangeText={setTrackName}
             />
             <TextInput
-              style={[styles.input, { color: theme.colors.text }]}
+              style={styles.input}
               placeholder="Location (optional)"
               placeholderTextColor={colors.textSecondary}
               value={trackLocation}
@@ -145,7 +143,7 @@ export default function TracksScreen() {
               size={64}
               color={colors.textSecondary}
             />
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+            <Text style={styles.emptyText}>
               No tracks yet. Add your first track to get started!
             </Text>
           </View>
@@ -154,7 +152,7 @@ export default function TracksScreen() {
             {tracks.map((track, index) => (
               <React.Fragment key={index}>
                 <TouchableOpacity
-                  style={[styles.trackCard, { backgroundColor: colors.card }]}
+                  style={styles.trackCard}
                   onPress={() => handleTrackPress(track)}
                   activeOpacity={0.7}
                 >
@@ -168,15 +166,15 @@ export default function TracksScreen() {
                       />
                     </View>
                     <View style={styles.trackDetails}>
-                      <Text style={[styles.trackName, { color: theme.colors.text }]}>
+                      <Text style={styles.trackName}>
                         {track.name}
                       </Text>
                       {track.location ? (
-                        <Text style={[styles.trackLocation, { color: colors.textSecondary }]}>
+                        <Text style={styles.trackLocation}>
                           {track.location}
                         </Text>
                       ) : null}
-                      <Text style={[styles.trackDate, { color: colors.textSecondary }]}>
+                      <Text style={styles.trackDate}>
                         Added {new Date(track.createdAt).toLocaleDateString()}
                       </Text>
                     </View>
@@ -214,6 +212,7 @@ export default function TracksScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
@@ -232,6 +231,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
+    color: colors.text,
   },
   addButton: {
     backgroundColor: colors.primary,
@@ -244,6 +244,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   addForm: {
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
@@ -264,6 +265,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     fontSize: 16,
+    color: colors.text,
     marginBottom: 12,
   },
   submitButton: {
@@ -287,11 +289,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 16,
     paddingHorizontal: 40,
+    color: colors.textSecondary,
   },
   tracksList: {
     gap: 12,
   },
   trackCard: {
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -321,13 +325,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 4,
+    color: colors.text,
   },
   trackLocation: {
     fontSize: 14,
     marginBottom: 2,
+    color: colors.textSecondary,
   },
   trackDate: {
     fontSize: 12,
+    color: colors.textSecondary,
   },
   deleteButton: {
     padding: 8,
