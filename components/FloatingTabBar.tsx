@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   View,
@@ -95,7 +96,9 @@ export default function FloatingTabBar({
   }, [activeTabIndex, animatedValue]);
 
   const handleTabPress = (route: Href) => {
-    router.push(route);
+    console.log('Tab pressed, navigating to:', route);
+    // Use replace instead of push to ensure proper navigation state
+    router.replace(route);
   };
 
   // Remove unnecessary tabBarStyle animation to prevent flickering
@@ -155,14 +158,14 @@ export default function FloatingTabBar({
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']} pointerEvents="box-none">
       <View style={[
         styles.container,
         {
           width: containerWidth,
           marginBottom: bottomMargin ?? 20
         }
-      ]}>
+      ]} pointerEvents="box-none">
         <BlurView
           intensity={80}
           style={[dynamicStyles.blurContainer, { borderRadius }]}
@@ -176,12 +179,11 @@ export default function FloatingTabBar({
               return (
                 <React.Fragment key={index}>
                 <TouchableOpacity
-                  key={index} // Use index as key
                   style={styles.tab}
                   onPress={() => handleTabPress(tab.route)}
                   activeOpacity={0.7}
                 >
-                  <View key={index} style={styles.tabContent}>
+                  <View style={styles.tabContent}>
                     <IconSymbol
                       android_material_icon_name={tab.icon}
                       ios_icon_name={tab.icon}

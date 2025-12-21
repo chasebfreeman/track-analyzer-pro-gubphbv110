@@ -178,6 +178,7 @@ export default function RecordScreen() {
         placeholderTextColor={colors.textSecondary}
         value={lane.kegSL}
         onChangeText={(text) => setLane({ ...lane, kegSL: text })}
+        keyboardType="numeric"
       />
 
       <Text style={styles.label}>Keg Out</Text>
@@ -187,6 +188,7 @@ export default function RecordScreen() {
         placeholderTextColor={colors.textSecondary}
         value={lane.kegOut}
         onChangeText={(text) => setLane({ ...lane, kegOut: text })}
+        keyboardType="numeric"
       />
 
       <Text style={styles.label}>Grippo SL</Text>
@@ -196,6 +198,7 @@ export default function RecordScreen() {
         placeholderTextColor={colors.textSecondary}
         value={lane.grippoSL}
         onChangeText={(text) => setLane({ ...lane, grippoSL: text })}
+        keyboardType="numeric"
       />
 
       <Text style={styles.label}>Grippo Out</Text>
@@ -205,6 +208,7 @@ export default function RecordScreen() {
         placeholderTextColor={colors.textSecondary}
         value={lane.grippoOut}
         onChangeText={(text) => setLane({ ...lane, grippoOut: text })}
+        keyboardType="numeric"
       />
 
       <Text style={styles.label}>Shine</Text>
