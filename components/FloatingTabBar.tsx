@@ -41,6 +41,7 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
     : 'rgba(255, 255, 255, 0.95)';
 
   console.log('FloatingTabBar rendering, current route:', state.routes[state.index]?.name);
+  console.log('FloatingTabBar colors:', { primary: colors.primary, text: colors.text });
 
   return (
     <View 
@@ -110,6 +111,11 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
                   });
                 };
 
+                const iconColor = isFocused ? colors.primary : colors.text;
+                const labelColor = isFocused ? colors.primary : colors.text;
+
+                console.log(`Tab ${route.name} - isFocused: ${isFocused}, iconColor: ${iconColor}, labelColor: ${labelColor}`);
+
                 return (
                   <TouchableOpacity
                     key={route.key}
@@ -135,13 +141,13 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
                       ios_icon_name={tabConfig.iosIcon}
                       android_material_icon_name={tabConfig.androidIcon}
                       size={24}
-                      color={isFocused ? colors.primary : colors.textSecondary}
+                      color={iconColor}
                     />
                     <Text
                       style={[
                         styles.tabLabel,
-                        { color: colors.textSecondary },
-                        isFocused && { color: colors.primary, fontWeight: '600' },
+                        { color: labelColor },
+                        isFocused && { fontWeight: '600' },
                       ]}
                     >
                       {tabConfig.label}

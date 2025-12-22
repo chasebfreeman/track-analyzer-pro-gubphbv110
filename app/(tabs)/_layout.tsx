@@ -10,13 +10,14 @@ export default function TabLayout() {
   const isDark = colorScheme === 'dark';
   
   console.log('TabLayout (Android) rendering, colorScheme:', colorScheme);
+  console.log('TabLayout colors:', { primary: colors.primary, textSecondary: colors.textSecondary });
   
   return (
     <NativeTabs
       tintColor={colors.primary}
-      iconColor={colors.textSecondary}
+      iconColor={colors.text}
       labelStyle={{
-        color: colors.textSecondary,
+        color: colors.text,
       }}
       backgroundColor={isDark ? '#1C1C1E' : '#F2F2F7'}
       backBehavior="initialRoute"
