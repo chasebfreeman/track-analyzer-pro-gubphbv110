@@ -56,21 +56,32 @@ export default function RecordScreen() {
     notes: '',
   });
 
+  // Load tracks on mount only
   useEffect(() => {
     console.log('RecordScreen mounted');
-    loadTracks();
+    const loadInitialData = async () => {
+      setIsLoading(true);
+      console.log('Loading tracks in RecordScreen...');
+      try {
+        const loadedTracks = await StorageService.getTracks();
+        console.log('Loaded tracks:', loadedTracks.length);
+        setTracks(loadedTracks.sort((a, b) => a.name.localeCompare(b.name)));
+      } catch (error) {
+        console.error('Error loading tracks:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInitialData();
     loadAvailableYears();
   }, []);
 
+  // Handle focus events separately
   useFocusEffect(
     React.useCallback(() => {
       console.log('Record screen focused');
       console.log('Params:', JSON.stringify(params));
-      
-      loadTracks().then(() => {
-        console.log('Tracks reloaded on focus');
-      });
-      loadAvailableYears();
 
       // Check if we're in edit mode
       if (params.editMode === 'true' && params.readingId) {
@@ -134,20 +145,6 @@ export default function RecordScreen() {
       setSelectedYear(year);
     }
   }, [params.trackId, params.year, tracks]);
-
-  const loadTracks = async () => {
-    setIsLoading(true);
-    console.log('Loading tracks in RecordScreen...');
-    try {
-      const loadedTracks = await StorageService.getTracks();
-      console.log('Loaded tracks:', loadedTracks.length);
-      setTracks(loadedTracks.sort((a, b) => a.name.localeCompare(b.name)));
-    } catch (error) {
-      console.error('Error loading tracks:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const loadAvailableYears = async () => {
     try {
