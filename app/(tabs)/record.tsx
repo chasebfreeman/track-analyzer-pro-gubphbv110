@@ -11,7 +11,7 @@ import {
   Image,
   Platform,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { colors } from '@/styles/commonStyles';
 import { StorageService } from '@/utils/storage';
@@ -47,30 +47,52 @@ export default function RecordScreen() {
     notes: '',
   });
 
+  // Load tracks on mount
   useEffect(() => {
     loadTracks();
   }, []);
 
+  // Use useFocusEffect to handle track selection when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('Record screen focused, params:', params);
+      
+      // Reload tracks to ensure we have the latest data
+      loadTracks().then(() => {
+        // After tracks are loaded, check if we need to auto-select
+        if (params.trackId) {
+          console.log('Attempting to auto-select track with ID:', params.trackId);
+        }
+      });
+    }, [params.trackId])
+  );
+
+  // Separate effect to handle track selection based on params
   useEffect(() => {
-    // Only try to auto-select after tracks are loaded
-    if (!isLoading && params.trackId && tracks.length > 0) {
+    if (params.trackId && tracks.length > 0) {
       const track = tracks.find((t) => t.id === params.trackId);
       if (track) {
         console.log('Auto-selecting track from params:', track.name);
         setSelectedTrack(track);
+        setShowTrackPicker(false);
       } else {
         console.log('Track not found with id:', params.trackId);
       }
     }
-  }, [params.trackId, tracks, isLoading]);
+  }, [params.trackId, tracks]);
 
   const loadTracks = async () => {
     setIsLoading(true);
     console.log('Loading tracks...');
-    const loadedTracks = await StorageService.getTracks();
-    console.log('Loaded tracks:', loadedTracks.length);
-    setTracks(loadedTracks.sort((a, b) => a.name.localeCompare(b.name)));
-    setIsLoading(false);
+    try {
+      const loadedTracks = await StorageService.getTracks();
+      console.log('Loaded tracks:', loadedTracks.length);
+      setTracks(loadedTracks.sort((a, b) => a.name.localeCompare(b.name)));
+    } catch (error) {
+      console.error('Error loading tracks:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const pickImage = async (lane: 'left' | 'right') => {
@@ -293,6 +315,7 @@ export default function RecordScreen() {
                         selectedTrack?.id === track.id && styles.trackOptionSelected,
                       ]}
                       onPress={() => {
+                        console.log('Track selected:', track.name);
                         setSelectedTrack(track);
                         setShowTrackPicker(false);
                       }}
