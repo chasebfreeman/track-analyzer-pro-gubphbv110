@@ -14,9 +14,9 @@ export default function TabLayout() {
   return (
     <NativeTabs
       tintColor={colors.primary}
-      iconColor={isDark ? '#98989D' : '#8E8E93'}
+      iconColor={colors.textSecondary}
       labelStyle={{
-        color: isDark ? '#98989D' : '#8E8E93',
+        color: colors.textSecondary,
       }}
       backgroundColor={isDark ? '#1C1C1E' : '#F2F2F7'}
       backBehavior="initialRoute"

@@ -135,12 +135,12 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
                       ios_icon_name={tabConfig.iosIcon}
                       android_material_icon_name={tabConfig.androidIcon}
                       size={24}
-                      color={isFocused ? colors.primary : (isDark ? '#98989D' : '#8E8E93')}
+                      color={isFocused ? colors.primary : colors.textSecondary}
                     />
                     <Text
                       style={[
                         styles.tabLabel,
-                        { color: isDark ? '#98989D' : '#8E8E93' },
+                        { color: colors.textSecondary },
                         isFocused && { color: colors.primary, fontWeight: '600' },
                       ]}
                     >
