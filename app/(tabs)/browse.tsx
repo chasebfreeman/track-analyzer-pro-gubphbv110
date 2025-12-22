@@ -30,6 +30,7 @@ export default function BrowseScreen() {
   useFocusEffect(
     React.useCallback(() => {
       console.log('Browse screen focused, reloading data');
+      loadTracks();
       if (selectedTrack) {
         loadReadings(selectedTrack.id);
       }
@@ -43,7 +44,9 @@ export default function BrowseScreen() {
   }, [selectedTrack]);
 
   const loadTracks = async () => {
+    console.log('Loading tracks in BrowseScreen...');
     const loadedTracks = await StorageService.getTracks();
+    console.log('Loaded tracks:', loadedTracks.length);
     setTracks(loadedTracks.sort((a, b) => a.name.localeCompare(b.name)));
     if (loadedTracks.length > 0 && !selectedTrack) {
       setSelectedTrack(loadedTracks[0]);
