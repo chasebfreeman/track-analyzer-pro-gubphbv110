@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -7,175 +7,142 @@ import {
   StyleSheet,
   Platform,
   Dimensions,
-  AppState,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/IconSymbol';
 import { BlurView } from 'expo-blur';
-import { useTheme } from '@react-navigation/native';
-import { useTabTrigger } from 'expo-router/ui';
+import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { colors } from '@/styles/commonStyles';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 interface TabConfig {
   name: string;
-  icon: string;
+  iosIcon: string;
+  androidIcon: string;
   label: string;
 }
 
 const TAB_CONFIGS: TabConfig[] = [
-  { name: 'tracks', icon: 'map', label: 'Tracks' },
-  { name: 'record', icon: 'add_circle', label: 'Record' },
-  { name: 'browse', icon: 'search', label: 'Browse' },
+  { name: 'tracks', iosIcon: 'map.fill', androidIcon: 'map', label: 'Tracks' },
+  { name: 'record', iosIcon: 'plus.circle.fill', androidIcon: 'add_circle', label: 'Record' },
+  { name: 'browse', iosIcon: 'magnifyingglass', androidIcon: 'search', label: 'Browse' },
 ];
 
-interface FloatingTabBarProps {
-  children: React.ReactElement[];
-}
+export default function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
-function TabButton({ name, icon, label }: TabConfig) {
-  const theme = useTheme();
-  const trigger = useTabTrigger({ name });
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    // Ensure the button is ready to receive touch events
-    const timer = setTimeout(() => {
-      setIsReady(true);
-      console.log(`Tab button ${name} is ready`);
-    }, 50);
-    
-    return () => clearTimeout(timer);
-  }, [name]);
-
-  const handlePress = () => {
-    console.log(`Tab ${name} pressed, isFocused: ${trigger.isFocused}`);
-    if (isReady && trigger.onPress) {
-      trigger.onPress();
-    }
-  };
-
-  const handleLongPress = () => {
-    console.log(`Tab ${name} long pressed`);
-    if (isReady && trigger.onLongPress) {
-      trigger.onLongPress();
-    }
-  };
-
-  return (
-    <TouchableOpacity
-      style={[
-        styles.tab,
-        trigger.isFocused && {
-          backgroundColor: theme.dark
-            ? 'rgba(255, 255, 255, 0.08)'
-            : 'rgba(0, 0, 0, 0.04)',
-          borderRadius: 27,
-        }
-      ]}
-      onPress={handlePress}
-      onLongPress={handleLongPress}
-      activeOpacity={0.6}
-      hitSlop={{ top: 10, bottom: 10, left: 5, right: 5 }}
-      disabled={!isReady}
-    >
-      <IconSymbol
-        android_material_icon_name={icon}
-        ios_icon_name={icon}
-        size={24}
-        color={trigger.isFocused ? theme.colors.primary : (theme.dark ? '#98989D' : '#000000')}
-      />
-      <Text
-        style={[
-          styles.tabLabel,
-          { color: theme.dark ? '#98989D' : '#8E8E93' },
-          trigger.isFocused && { color: theme.colors.primary, fontWeight: '600' },
-        ]}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-}
-
-export default function FloatingTabBar({ children }: FloatingTabBarProps) {
-  const theme = useTheme();
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  useEffect(() => {
-    console.log('FloatingTabBar mounted');
-    
-    // Ensure the tab bar is fully initialized before accepting touches
-    const initTimer = setTimeout(() => {
-      setIsInitialized(true);
-      console.log('FloatingTabBar initialized and ready for touches');
-    }, 100);
-
-    // Monitor app state to re-initialize if needed
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      console.log('FloatingTabBar - AppState changed to:', nextAppState);
-      if (nextAppState === 'active') {
-        // Re-enable touch events when app becomes active
-        setIsInitialized(true);
-      }
-    });
-
-    return () => {
-      clearTimeout(initTimer);
-      subscription.remove();
-    };
-  }, []);
-
-  const blurTint = theme.dark ? 'dark' : 'light';
-  const backgroundColor = theme.dark
+  const blurTint = isDark ? 'dark' : 'light';
+  const backgroundColor = isDark
     ? 'rgba(28, 28, 30, 0.95)'
     : 'rgba(255, 255, 255, 0.95)';
 
   return (
-    <>
-      {children}
-      <View 
-        style={styles.outerContainer}
+    <View 
+      style={styles.outerContainer}
+      pointerEvents="box-none"
+    >
+      <SafeAreaView 
+        style={styles.safeArea} 
+        edges={['bottom']}
         pointerEvents="box-none"
       >
-        <SafeAreaView 
-          style={styles.safeArea} 
-          edges={['bottom']}
-          pointerEvents="box-none"
+        <View 
+          style={[
+            styles.container,
+            {
+              width: Math.min(screenWidth * 0.7, 400),
+              marginBottom: 20
+            }
+          ]}
+          pointerEvents="auto"
         >
-          <View 
+          <BlurView
+            intensity={80}
+            tint={blurTint}
             style={[
-              styles.container,
-              {
-                width: screenWidth / 2.5,
-                marginBottom: 20
+              styles.blurContainer,
+              { 
+                borderRadius: 35,
+                backgroundColor,
+                borderWidth: 1.2,
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
               }
             ]}
-            pointerEvents={isInitialized ? "auto" : "none"}
           >
-            <BlurView
-              intensity={80}
-              tint={blurTint}
-              style={[
-                styles.blurContainer,
-                { 
-                  borderRadius: 35,
-                  backgroundColor,
-                  borderWidth: 1.2,
-                  borderColor: theme.dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-                }
-              ]}
-            >
-              <View style={styles.tabsContainer}>
-                {TAB_CONFIGS.map((config, index) => (
-                  <TabButton key={`${config.name}-${index}`} {...config} />
-                ))}
-              </View>
-            </BlurView>
-          </View>
-        </SafeAreaView>
-      </View>
-    </>
+            <View style={styles.tabsContainer}>
+              {state.routes.map((route, index) => {
+                const { options } = descriptors[route.key];
+                const isFocused = state.index === index;
+                const tabConfig = TAB_CONFIGS.find(t => t.name === route.name);
+
+                if (!tabConfig) return null;
+
+                const onPress = () => {
+                  const event = navigation.emit({
+                    type: 'tabPress',
+                    target: route.key,
+                    canPreventDefault: true,
+                  });
+
+                  if (!isFocused && !event.defaultPrevented) {
+                    navigation.navigate(route.name);
+                  }
+                };
+
+                const onLongPress = () => {
+                  navigation.emit({
+                    type: 'tabLongPress',
+                    target: route.key,
+                  });
+                };
+
+                return (
+                  <TouchableOpacity
+                    key={route.key}
+                    accessibilityRole="button"
+                    accessibilityState={isFocused ? { selected: true } : {}}
+                    accessibilityLabel={options.tabBarAccessibilityLabel}
+                    testID={options.tabBarTestID}
+                    onPress={onPress}
+                    onLongPress={onLongPress}
+                    style={[
+                      styles.tab,
+                      isFocused && {
+                        backgroundColor: isDark
+                          ? 'rgba(255, 255, 255, 0.08)'
+                          : 'rgba(0, 0, 0, 0.04)',
+                        borderRadius: 27,
+                      }
+                    ]}
+                    activeOpacity={0.6}
+                    hitSlop={{ top: 10, bottom: 10, left: 5, right: 5 }}
+                  >
+                    <IconSymbol
+                      ios_icon_name={tabConfig.iosIcon}
+                      android_material_icon_name={tabConfig.androidIcon}
+                      size={24}
+                      color={isFocused ? colors.primary : (isDark ? '#98989D' : '#8E8E93')}
+                    />
+                    <Text
+                      style={[
+                        styles.tabLabel,
+                        { color: isDark ? '#98989D' : '#8E8E93' },
+                        isFocused && { color: colors.primary, fontWeight: '600' },
+                      ]}
+                    >
+                      {tabConfig.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </BlurView>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -217,7 +184,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 2,
   },
   tabLabel: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '500',
     marginTop: 2,
   },
