@@ -1,5 +1,5 @@
 
-import { StyleSheet, ViewStyle, TextStyle, useColorScheme } from 'react-native';
+import { StyleSheet, ViewStyle, TextStyle, useColorScheme, ColorSchemeName } from 'react-native';
 
 // Light mode colors
 const lightColors = {
@@ -33,14 +33,23 @@ const darkColors = {
   warning: '#FFD60A',
 };
 
-// Export colors based on color scheme
+// Export a function to get colors based on color scheme
+export const getColors = (colorScheme: ColorSchemeName) => {
+  return colorScheme === 'dark' ? darkColors : lightColors;
+};
+
+// Export default colors (light mode) for backwards compatibility
 export const colors = lightColors;
 
-export const getColors = (isDark: boolean) => isDark ? darkColors : lightColors;
+// Hook to get current colors based on color scheme
+export const useThemeColors = () => {
+  const colorScheme = useColorScheme();
+  return getColors(colorScheme);
+};
 
 export const buttonStyles = StyleSheet.create({
   primaryButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: lightColors.primary,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -48,7 +57,7 @@ export const buttonStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   secondaryButton: {
-    backgroundColor: colors.secondary,
+    backgroundColor: lightColors.secondary,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -56,7 +65,7 @@ export const buttonStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   accentButton: {
-    backgroundColor: colors.accent,
+    backgroundColor: lightColors.accent,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -73,7 +82,7 @@ export const buttonStyles = StyleSheet.create({
 export const commonStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: lightColors.background,
   },
   content: {
     flex: 1,
@@ -82,27 +91,27 @@ export const commonStyles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: colors.text,
+    color: lightColors.text,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: lightColors.text,
     marginBottom: 8,
   },
   text: {
     fontSize: 16,
-    color: colors.text,
+    color: lightColors.text,
     lineHeight: 24,
   },
   textSecondary: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: lightColors.textSecondary,
     lineHeight: 20,
   },
   card: {
-    backgroundColor: colors.card,
+    backgroundColor: lightColors.card,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -110,20 +119,20 @@ export const commonStyles = StyleSheet.create({
     elevation: 2,
   },
   input: {
-    backgroundColor: colors.card,
+    backgroundColor: lightColors.card,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: lightColors.border,
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 12,
     fontSize: 16,
-    color: colors.text,
+    color: lightColors.text,
     marginBottom: 12,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    color: lightColors.text,
     marginBottom: 6,
   },
   section: {

@@ -1,12 +1,15 @@
 
 import React from 'react';
 import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
-import { colors } from '@/styles/commonStyles';
+import { useThemeColors } from '@/styles/commonStyles';
 import { useColorScheme } from 'react-native';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const colors = useThemeColors();
   const isDark = colorScheme === 'dark';
+  
+  console.log('TabLayout (Android) rendering, colorScheme:', colorScheme);
   
   return (
     <NativeTabs

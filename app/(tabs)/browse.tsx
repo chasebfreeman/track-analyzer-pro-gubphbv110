@@ -10,12 +10,13 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { colors } from '@/styles/commonStyles';
+import { useThemeColors } from '@/styles/commonStyles';
 import { StorageService } from '@/utils/storage';
 import { Track, TrackReading, DayReadings } from '@/types/TrackData';
 import { IconSymbol } from '@/components/IconSymbol';
 
 export default function BrowseScreen() {
+  const colors = useThemeColors();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [readings, setReadings] = useState<TrackReading[]>([]);
@@ -118,66 +119,72 @@ export default function BrowseScreen() {
     }
   };
 
-  const renderLaneData = (lane: any, title: string) => (
-    <View style={styles.laneData}>
-      <Text style={styles.laneDataTitle}>{title}</Text>
-      <View style={styles.dataGrid}>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Track Temp:</Text>
-          <Text style={styles.dataValue}>
-            {lane.trackTemp || 'N/A'}°F
-          </Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>UV Index:</Text>
-          <Text style={styles.dataValue}>
-            {lane.uvIndex || 'N/A'}
-          </Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Keg SL:</Text>
-          <Text style={styles.dataValue}>
-            {lane.kegSL || 'N/A'}
-          </Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Keg Out:</Text>
-          <Text style={styles.dataValue}>
-            {lane.kegOut || 'N/A'}
-          </Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Grippo SL:</Text>
-          <Text style={styles.dataValue}>
-            {lane.grippoSL || 'N/A'}
-          </Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Grippo Out:</Text>
-          <Text style={styles.dataValue}>
-            {lane.grippoOut || 'N/A'}
-          </Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Shine:</Text>
-          <Text style={styles.dataValue}>
-            {lane.shine || 'N/A'}
-          </Text>
-        </View>
-        {lane.notes && (
-          <View style={styles.notesRow}>
-            <Text style={styles.dataLabel}>Notes:</Text>
-            <Text style={styles.notesValue}>
-              {lane.notes}
+  const renderLaneData = (lane: any, title: string) => {
+    const styles = getStyles(colors);
+    
+    return (
+      <View style={styles.laneData}>
+        <Text style={styles.laneDataTitle}>{title}</Text>
+        <View style={styles.dataGrid}>
+          <View style={styles.dataRow}>
+            <Text style={styles.dataLabel}>Track Temp:</Text>
+            <Text style={styles.dataValue}>
+              {lane.trackTemp || 'N/A'}°F
             </Text>
           </View>
-        )}
-        {lane.imageUri && (
-          <Image source={{ uri: lane.imageUri }} style={styles.laneImage} />
-        )}
+          <View style={styles.dataRow}>
+            <Text style={styles.dataLabel}>UV Index:</Text>
+            <Text style={styles.dataValue}>
+              {lane.uvIndex || 'N/A'}
+            </Text>
+          </View>
+          <View style={styles.dataRow}>
+            <Text style={styles.dataLabel}>Keg SL:</Text>
+            <Text style={styles.dataValue}>
+              {lane.kegSL || 'N/A'}
+            </Text>
+          </View>
+          <View style={styles.dataRow}>
+            <Text style={styles.dataLabel}>Keg Out:</Text>
+            <Text style={styles.dataValue}>
+              {lane.kegOut || 'N/A'}
+            </Text>
+          </View>
+          <View style={styles.dataRow}>
+            <Text style={styles.dataLabel}>Grippo SL:</Text>
+            <Text style={styles.dataValue}>
+              {lane.grippoSL || 'N/A'}
+            </Text>
+          </View>
+          <View style={styles.dataRow}>
+            <Text style={styles.dataLabel}>Grippo Out:</Text>
+            <Text style={styles.dataValue}>
+              {lane.grippoOut || 'N/A'}
+            </Text>
+          </View>
+          <View style={styles.dataRow}>
+            <Text style={styles.dataLabel}>Shine:</Text>
+            <Text style={styles.dataValue}>
+              {lane.shine || 'N/A'}
+            </Text>
+          </View>
+          {lane.notes && (
+            <View style={styles.notesRow}>
+              <Text style={styles.dataLabel}>Notes:</Text>
+              <Text style={styles.notesValue}>
+                {lane.notes}
+              </Text>
+            </View>
+          )}
+          {lane.imageUri && (
+            <Image source={{ uri: lane.imageUri }} style={styles.laneImage} />
+          )}
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
+
+  const styles = getStyles(colors);
 
   return (
     <View style={styles.container}>
@@ -318,181 +325,183 @@ export default function BrowseScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingTop: Platform.OS === 'android' ? 48 : 60,
-    paddingHorizontal: 16,
-    paddingBottom: 120,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 20,
-    color: colors.text,
-  },
-  trackSelector: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  trackButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-  },
-  trackButtonText: {
-    fontSize: 16,
-    color: colors.text,
-  },
-  trackList: {
-    marginTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: 12,
-  },
-  trackOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    backgroundColor: colors.background,
-  },
-  trackOptionSelected: {
-    backgroundColor: colors.primary,
-  },
-  trackOptionText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.text,
-  },
-  trackOptionTextSelected: {
-    color: '#ffffff',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 16,
-    paddingHorizontal: 40,
-    lineHeight: 24,
-    color: colors.textSecondary,
-  },
-  readingsList: {
-    gap: 20,
-  },
-  daySection: {
-    marginBottom: 12,
-  },
-  dayHeader: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-    color: colors.text,
-  },
-  readingCard: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
-  },
-  readingHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  readingHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  readingHeaderRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  readingTime: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  deleteButton: {
-    padding: 4,
-  },
-  readingDetails: {
-    marginTop: 16,
-    gap: 16,
-  },
-  laneData: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: 12,
-  },
-  laneDataTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-    color: colors.primary,
-  },
-  dataGrid: {
-    gap: 8,
-  },
-  dataRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dataLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
-  dataValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  notesRow: {
-    marginTop: 8,
-  },
-  notesValue: {
-    fontSize: 14,
-    marginTop: 4,
-    lineHeight: 20,
-    color: colors.text,
-  },
-  laneImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    marginTop: 12,
-    resizeMode: 'cover',
-  },
-});
+function getStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingTop: Platform.OS === 'android' ? 48 : 60,
+      paddingHorizontal: 16,
+      paddingBottom: 120,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      marginBottom: 20,
+      color: colors.text,
+    },
+    trackSelector: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 20,
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 8,
+    },
+    trackButton: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+    },
+    trackButtonText: {
+      fontSize: 16,
+      color: colors.text,
+    },
+    trackList: {
+      marginTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 12,
+    },
+    trackOption: {
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+      marginBottom: 8,
+      backgroundColor: colors.background,
+    },
+    trackOptionSelected: {
+      backgroundColor: colors.primary,
+    },
+    trackOptionText: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: colors.text,
+    },
+    trackOptionTextSelected: {
+      color: '#ffffff',
+    },
+    emptyState: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 60,
+    },
+    emptyText: {
+      fontSize: 16,
+      textAlign: 'center',
+      marginTop: 16,
+      paddingHorizontal: 40,
+      lineHeight: 24,
+      color: colors.textSecondary,
+    },
+    readingsList: {
+      gap: 20,
+    },
+    daySection: {
+      marginBottom: 12,
+    },
+    dayHeader: {
+      fontSize: 18,
+      fontWeight: '600',
+      marginBottom: 12,
+      color: colors.text,
+    },
+    readingCard: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
+    readingHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    readingHeaderLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    readingHeaderRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    readingTime: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    deleteButton: {
+      padding: 4,
+    },
+    readingDetails: {
+      marginTop: 16,
+      gap: 16,
+    },
+    laneData: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 12,
+    },
+    laneDataTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      marginBottom: 12,
+      color: colors.primary,
+    },
+    dataGrid: {
+      gap: 8,
+    },
+    dataRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    dataLabel: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
+    dataValue: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    notesRow: {
+      marginTop: 8,
+    },
+    notesValue: {
+      fontSize: 14,
+      marginTop: 4,
+      lineHeight: 20,
+      color: colors.text,
+    },
+    laneImage: {
+      width: '100%',
+      height: 200,
+      borderRadius: 8,
+      marginTop: 12,
+      resizeMode: 'cover',
+    },
+  });
+}

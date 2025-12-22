@@ -12,13 +12,14 @@ import {
   Keyboard,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { colors, commonStyles } from '@/styles/commonStyles';
+import { useThemeColors } from '@/styles/commonStyles';
 import { StorageService } from '@/utils/storage';
 import { Track } from '@/types/TrackData';
 import { IconSymbol } from '@/components/IconSymbol';
 
 export default function TracksScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [trackName, setTrackName] = useState('');
@@ -111,6 +112,138 @@ export default function TracksScreen() {
       Alert.alert('Navigation Error', 'Failed to navigate to record screen. Please try again.');
     }
   }, [router]);
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingTop: Platform.OS === 'android' ? 48 : 60,
+      paddingHorizontal: 16,
+      paddingBottom: 120,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    addButton: {
+      backgroundColor: colors.primary,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0px 2px 8px rgba(0, 123, 255, 0.3)',
+      elevation: 4,
+    },
+    addForm: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 20,
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
+    formTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 12,
+    },
+    input: {
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      fontSize: 16,
+      color: colors.text,
+      marginBottom: 12,
+    },
+    submitButton: {
+      backgroundColor: colors.accent,
+      paddingVertical: 12,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    submitButtonText: {
+      color: '#ffffff',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    emptyState: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 60,
+    },
+    emptyText: {
+      fontSize: 16,
+      textAlign: 'center',
+      marginTop: 16,
+      paddingHorizontal: 40,
+      color: colors.textSecondary,
+    },
+    tracksList: {
+      gap: 12,
+    },
+    trackCard: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
+    trackInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    trackIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    trackDetails: {
+      flex: 1,
+    },
+    trackName: {
+      fontSize: 18,
+      fontWeight: '600',
+      marginBottom: 4,
+      color: colors.text,
+    },
+    trackLocation: {
+      fontSize: 14,
+      marginBottom: 2,
+      color: colors.textSecondary,
+    },
+    trackDate: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    deleteButton: {
+      padding: 8,
+    },
+  });
 
   return (
     <View style={styles.container}>
@@ -242,135 +375,3 @@ export default function TracksScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingTop: Platform.OS === 'android' ? 48 : 60,
-    paddingHorizontal: 16,
-    paddingBottom: 120,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  addButton: {
-    backgroundColor: colors.primary,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0px 2px 8px rgba(0, 123, 255, 0.3)',
-    elevation: 4,
-  },
-  addForm: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
-  },
-  formTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 12,
-  },
-  input: {
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    color: colors.text,
-    marginBottom: 12,
-  },
-  submitButton: {
-    backgroundColor: colors.accent,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  submitButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 16,
-    paddingHorizontal: 40,
-    color: colors.textSecondary,
-  },
-  tracksList: {
-    gap: 12,
-  },
-  trackCard: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
-  },
-  trackInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  trackIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  trackDetails: {
-    flex: 1,
-  },
-  trackName: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 4,
-    color: colors.text,
-  },
-  trackLocation: {
-    fontSize: 14,
-    marginBottom: 2,
-    color: colors.textSecondary,
-  },
-  trackDate: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  deleteButton: {
-    padding: 8,
-  },
-});

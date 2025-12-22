@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useFocusEffect, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { colors } from '@/styles/commonStyles';
+import { useThemeColors } from '@/styles/commonStyles';
 import { StorageService } from '@/utils/storage';
 import { Track, TrackReading, LaneReading } from '@/types/TrackData';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -22,6 +22,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 export default function RecordScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
+  const colors = useThemeColors();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showTrackPicker, setShowTrackPicker] = useState(false);
@@ -176,118 +177,124 @@ export default function RecordScreen() {
     setLane: (lane: LaneReading) => void,
     title: string,
     laneType: 'left' | 'right'
-  ) => (
-    <View style={styles.laneSection}>
-      <Text style={styles.laneTitle}>{title}</Text>
+  ) => {
+    const styles = getStyles(colors);
+    
+    return (
+      <View style={styles.laneSection}>
+        <Text style={styles.laneTitle}>{title}</Text>
 
-      <Text style={styles.label}>Track Temp (°F)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="e.g., 85"
-        placeholderTextColor={colors.textSecondary}
-        value={lane.trackTemp}
-        onChangeText={(text) => setLane({ ...lane, trackTemp: text })}
-        keyboardType="numeric"
-        returnKeyType="next"
-      />
-
-      <Text style={styles.label}>UV Index</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="e.g., 7"
-        placeholderTextColor={colors.textSecondary}
-        value={lane.uvIndex}
-        onChangeText={(text) => setLane({ ...lane, uvIndex: text })}
-        keyboardType="numeric"
-        returnKeyType="next"
-      />
-
-      <Text style={styles.label}>Keg SL</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter value"
-        placeholderTextColor={colors.textSecondary}
-        value={lane.kegSL}
-        onChangeText={(text) => setLane({ ...lane, kegSL: text })}
-        keyboardType="numeric"
-        returnKeyType="next"
-      />
-
-      <Text style={styles.label}>Keg Out</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter value"
-        placeholderTextColor={colors.textSecondary}
-        value={lane.kegOut}
-        onChangeText={(text) => setLane({ ...lane, kegOut: text })}
-        keyboardType="numeric"
-        returnKeyType="next"
-      />
-
-      <Text style={styles.label}>Grippo SL</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter value"
-        placeholderTextColor={colors.textSecondary}
-        value={lane.grippoSL}
-        onChangeText={(text) => setLane({ ...lane, grippoSL: text })}
-        keyboardType="numeric"
-        returnKeyType="next"
-      />
-
-      <Text style={styles.label}>Grippo Out</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter value"
-        placeholderTextColor={colors.textSecondary}
-        value={lane.grippoOut}
-        onChangeText={(text) => setLane({ ...lane, grippoOut: text })}
-        keyboardType="numeric"
-        returnKeyType="next"
-      />
-
-      <Text style={styles.label}>Shine</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter value"
-        placeholderTextColor={colors.textSecondary}
-        value={lane.shine}
-        onChangeText={(text) => setLane({ ...lane, shine: text })}
-        returnKeyType="next"
-      />
-
-      <Text style={styles.label}>Notes</Text>
-      <TextInput
-        style={[styles.input, styles.notesInput]}
-        placeholder="Additional notes..."
-        placeholderTextColor={colors.textSecondary}
-        value={lane.notes}
-        onChangeText={(text) => setLane({ ...lane, notes: text })}
-        multiline
-        numberOfLines={3}
-        returnKeyType="done"
-      />
-
-      <TouchableOpacity
-        style={styles.imageButton}
-        onPress={() => pickImage(laneType)}
-      >
-        <IconSymbol
-          ios_icon_name="camera"
-          android_material_icon_name="camera_alt"
-          size={20}
-          color="#ffffff"
+        <Text style={styles.label}>Track Temp (°F)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g., 85"
+          placeholderTextColor={colors.textSecondary}
+          value={lane.trackTemp}
+          onChangeText={(text) => setLane({ ...lane, trackTemp: text })}
+          keyboardType="numeric"
+          returnKeyType="next"
         />
-        <Text style={styles.imageButtonText}>
-          {lane.imageUri ? 'Change Photo' : 'Add Photo'}
-        </Text>
-      </TouchableOpacity>
 
-      {lane.imageUri && (
-        <Image source={{ uri: lane.imageUri }} style={styles.previewImage} />
-      )}
-    </View>
-  );
+        <Text style={styles.label}>UV Index</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g., 7"
+          placeholderTextColor={colors.textSecondary}
+          value={lane.uvIndex}
+          onChangeText={(text) => setLane({ ...lane, uvIndex: text })}
+          keyboardType="numeric"
+          returnKeyType="next"
+        />
+
+        <Text style={styles.label}>Keg SL</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter value"
+          placeholderTextColor={colors.textSecondary}
+          value={lane.kegSL}
+          onChangeText={(text) => setLane({ ...lane, kegSL: text })}
+          keyboardType="numeric"
+          returnKeyType="next"
+        />
+
+        <Text style={styles.label}>Keg Out</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter value"
+          placeholderTextColor={colors.textSecondary}
+          value={lane.kegOut}
+          onChangeText={(text) => setLane({ ...lane, kegOut: text })}
+          keyboardType="numeric"
+          returnKeyType="next"
+        />
+
+        <Text style={styles.label}>Grippo SL</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter value"
+          placeholderTextColor={colors.textSecondary}
+          value={lane.grippoSL}
+          onChangeText={(text) => setLane({ ...lane, grippoSL: text })}
+          keyboardType="numeric"
+          returnKeyType="next"
+        />
+
+        <Text style={styles.label}>Grippo Out</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter value"
+          placeholderTextColor={colors.textSecondary}
+          value={lane.grippoOut}
+          onChangeText={(text) => setLane({ ...lane, grippoOut: text })}
+          keyboardType="numeric"
+          returnKeyType="next"
+        />
+
+        <Text style={styles.label}>Shine</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter value"
+          placeholderTextColor={colors.textSecondary}
+          value={lane.shine}
+          onChangeText={(text) => setLane({ ...lane, shine: text })}
+          returnKeyType="next"
+        />
+
+        <Text style={styles.label}>Notes</Text>
+        <TextInput
+          style={[styles.input, styles.notesInput]}
+          placeholder="Additional notes..."
+          placeholderTextColor={colors.textSecondary}
+          value={lane.notes}
+          onChangeText={(text) => setLane({ ...lane, notes: text })}
+          multiline
+          numberOfLines={3}
+          returnKeyType="done"
+        />
+
+        <TouchableOpacity
+          style={styles.imageButton}
+          onPress={() => pickImage(laneType)}
+        >
+          <IconSymbol
+            ios_icon_name="camera"
+            android_material_icon_name="camera_alt"
+            size={20}
+            color="#ffffff"
+          />
+          <Text style={styles.imageButtonText}>
+            {lane.imageUri ? 'Change Photo' : 'Add Photo'}
+          </Text>
+        </TouchableOpacity>
+
+        {lane.imageUri && (
+          <Image source={{ uri: lane.imageUri }} style={styles.previewImage} />
+        )}
+      </View>
+    );
+  };
+
+  const styles = getStyles(colors);
 
   return (
     <View style={styles.container}>
@@ -378,154 +385,156 @@ export default function RecordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingTop: Platform.OS === 'android' ? 48 : 60,
-    paddingHorizontal: 16,
-    paddingBottom: 120,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 20,
-    color: colors.text,
-  },
-  trackSelector: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  trackButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-  },
-  trackButtonText: {
-    fontSize: 16,
-    color: colors.text,
-  },
-  trackList: {
-    marginTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: 12,
-  },
-  trackOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    backgroundColor: colors.background,
-  },
-  trackOptionSelected: {
-    backgroundColor: colors.primary,
-  },
-  trackOptionText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.text,
-  },
-  trackOptionTextSelected: {
-    color: '#ffffff',
-  },
-  trackOptionLocation: {
-    fontSize: 12,
-    marginTop: 2,
-    color: colors.textSecondary,
-  },
-  noTracksText: {
-    fontSize: 14,
-    textAlign: 'center',
-    paddingVertical: 12,
-    color: colors.textSecondary,
-  },
-  laneSection: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
-  },
-  laneTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 16,
-    color: colors.text,
-  },
-  input: {
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    marginBottom: 12,
-    color: colors.text,
-  },
-  notesInput: {
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  imageButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.secondary,
-    paddingVertical: 12,
-    borderRadius: 8,
-    gap: 8,
-  },
-  imageButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  previewImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    marginTop: 12,
-    resizeMode: 'cover',
-  },
-  saveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.accent,
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
-    marginBottom: 20,
-    boxShadow: '0px 4px 8px rgba(40, 167, 69, 0.3)',
-    elevation: 4,
-  },
-  saveButtonText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-});
+function getStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingTop: Platform.OS === 'android' ? 48 : 60,
+      paddingHorizontal: 16,
+      paddingBottom: 120,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      marginBottom: 20,
+      color: colors.text,
+    },
+    trackSelector: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 20,
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 8,
+    },
+    trackButton: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+    },
+    trackButtonText: {
+      fontSize: 16,
+      color: colors.text,
+    },
+    trackList: {
+      marginTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 12,
+    },
+    trackOption: {
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+      marginBottom: 8,
+      backgroundColor: colors.background,
+    },
+    trackOptionSelected: {
+      backgroundColor: colors.primary,
+    },
+    trackOptionText: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: colors.text,
+    },
+    trackOptionTextSelected: {
+      color: '#ffffff',
+    },
+    trackOptionLocation: {
+      fontSize: 12,
+      marginTop: 2,
+      color: colors.textSecondary,
+    },
+    noTracksText: {
+      fontSize: 14,
+      textAlign: 'center',
+      paddingVertical: 12,
+      color: colors.textSecondary,
+    },
+    laneSection: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 20,
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
+    laneTitle: {
+      fontSize: 20,
+      fontWeight: '600',
+      marginBottom: 16,
+      color: colors.text,
+    },
+    input: {
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      fontSize: 16,
+      marginBottom: 12,
+      color: colors.text,
+    },
+    notesInput: {
+      minHeight: 80,
+      textAlignVertical: 'top',
+    },
+    imageButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.secondary,
+      paddingVertical: 12,
+      borderRadius: 8,
+      gap: 8,
+    },
+    imageButtonText: {
+      color: '#ffffff',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    previewImage: {
+      width: '100%',
+      height: 200,
+      borderRadius: 8,
+      marginTop: 12,
+      resizeMode: 'cover',
+    },
+    saveButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.accent,
+      paddingVertical: 16,
+      borderRadius: 12,
+      gap: 8,
+      marginBottom: 20,
+      boxShadow: '0px 4px 8px rgba(40, 167, 69, 0.3)',
+      elevation: 4,
+    },
+    saveButtonText: {
+      color: '#ffffff',
+      fontSize: 18,
+      fontWeight: '700',
+    },
+  });
+}

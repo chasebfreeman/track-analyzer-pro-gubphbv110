@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/IconSymbol';
 import { BlurView } from 'expo-blur';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { colors } from '@/styles/commonStyles';
+import { useThemeColors } from '@/styles/commonStyles';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -32,12 +32,15 @@ const TAB_CONFIGS: TabConfig[] = [
 
 export default function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const colorScheme = useColorScheme();
+  const colors = useThemeColors();
   const isDark = colorScheme === 'dark';
 
   const blurTint = isDark ? 'dark' : 'light';
   const backgroundColor = isDark
     ? 'rgba(28, 28, 30, 0.95)'
     : 'rgba(255, 255, 255, 0.95)';
+
+  console.log('FloatingTabBar rendering, state.index:', state.index);
 
   return (
     <View 
@@ -81,6 +84,8 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
                 if (!tabConfig) return null;
 
                 const onPress = () => {
+                  console.log('Tab pressed:', route.name, 'isFocused:', isFocused);
+                  
                   const event = navigation.emit({
                     type: 'tabPress',
                     target: route.key,
@@ -88,6 +93,7 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
                   });
 
                   if (!isFocused && !event.defaultPrevented) {
+                    console.log('Navigating to:', route.name);
                     navigation.navigate(route.name);
                   }
                 };
