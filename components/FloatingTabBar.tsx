@@ -40,7 +40,7 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
     ? 'rgba(28, 28, 30, 0.95)'
     : 'rgba(255, 255, 255, 0.95)';
 
-  console.log('FloatingTabBar rendering, state.index:', state.index);
+  console.log('FloatingTabBar rendering, current route:', state.routes[state.index]?.name);
 
   return (
     <View 
@@ -60,7 +60,6 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
               marginBottom: 20
             }
           ]}
-          pointerEvents="auto"
         >
           <BlurView
             intensity={80}
@@ -81,10 +80,13 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
                 const isFocused = state.index === index;
                 const tabConfig = TAB_CONFIGS.find(t => t.name === route.name);
 
-                if (!tabConfig) return null;
+                if (!tabConfig) {
+                  console.warn('Tab config not found for route:', route.name);
+                  return null;
+                }
 
                 const onPress = () => {
-                  console.log('Tab pressed:', route.name, 'isFocused:', isFocused);
+                  console.log('Tab pressed:', route.name, 'currently focused:', isFocused);
                   
                   const event = navigation.emit({
                     type: 'tabPress',
@@ -93,12 +95,15 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
                   });
 
                   if (!isFocused && !event.defaultPrevented) {
-                    console.log('Navigating to:', route.name);
+                    console.log('Navigating to tab:', route.name);
                     navigation.navigate(route.name);
+                  } else {
+                    console.log('Tab already focused or navigation prevented');
                   }
                 };
 
                 const onLongPress = () => {
+                  console.log('Tab long pressed:', route.name);
                   navigation.emit({
                     type: 'tabLongPress',
                     target: route.key,

@@ -19,19 +19,19 @@ export default function TabLayout() {
         color: isDark ? '#98989D' : '#8E8E93',
       }}
       backgroundColor={isDark ? '#1C1C1E' : '#F2F2F7'}
-      backBehavior="history"
+      backBehavior="initialRoute"
     >
       <NativeTabs.Trigger name="tracks">
+        <Icon sf={{ default: 'map', selected: 'map.fill' }} drawable="map" />
         <Label>Tracks</Label>
-        <Icon sf="map.fill" drawable="map" />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="record">
+        <Icon sf={{ default: 'plus.circle', selected: 'plus.circle.fill' }} drawable="add_circle" />
         <Label>Record</Label>
-        <Icon sf="plus.circle.fill" drawable="add_circle" />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="browse">
+        <Icon sf={{ default: 'magnifyingglass', selected: 'magnifyingglass' }} drawable="search" />
         <Label>Browse</Label>
-        <Icon sf="magnifyingglass" drawable="search" />
       </NativeTabs.Trigger>
     </NativeTabs>
   );
