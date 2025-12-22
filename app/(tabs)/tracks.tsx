@@ -58,15 +58,28 @@ export default function TracksScreen() {
       const years = await StorageService.getAvailableYears();
       const currentYear = new Date().getFullYear();
       
-      // Always include current year even if no data exists
-      if (!years.includes(currentYear)) {
-        years.unshift(currentYear);
-      }
+      // Create a comprehensive list of years from 2024 to current year + 1
+      const allYears = new Set<number>();
       
-      console.log('Available years:', years);
-      setAvailableYears(years);
+      // Add years from data
+      years.forEach(year => allYears.add(year));
+      
+      // Always include 2024, 2025, current year, and next year
+      allYears.add(2024);
+      allYears.add(2025);
+      allYears.add(currentYear);
+      allYears.add(currentYear + 1);
+      
+      // Convert to sorted array (newest first)
+      const sortedYears = Array.from(allYears).sort((a, b) => b - a);
+      
+      console.log('Available years:', sortedYears);
+      setAvailableYears(sortedYears);
     } catch (error) {
       console.error('Error loading available years:', error);
+      // Fallback to basic years if there's an error
+      const currentYear = new Date().getFullYear();
+      setAvailableYears([currentYear + 1, currentYear, 2025, 2024].filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => b - a));
     }
   };
 
