@@ -28,6 +28,7 @@ export default function RecordScreen() {
   const [showTrackPicker, setShowTrackPicker] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [classCurrentlyRunning, setClassCurrentlyRunning] = useState('');
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
   const [leftLane, setLeftLane] = useState<LaneReading>({
     trackTemp: '',
@@ -80,7 +81,13 @@ export default function RecordScreen() {
         console.log('Available track IDs:', tracks.map(t => t.id));
       }
     }
-  }, [params.trackId, tracks]);
+    
+    if (params.year) {
+      const year = parseInt(params.year as string);
+      console.log('Setting year from params:', year);
+      setSelectedYear(year);
+    }
+  }, [params.trackId, params.year, tracks]);
 
   const loadTracks = async () => {
     setIsLoading(true);
@@ -128,6 +135,7 @@ export default function RecordScreen() {
       date: now.toLocaleDateString(),
       time: now.toLocaleTimeString(),
       timestamp: now.getTime(),
+      year: selectedYear,
       classCurrentlyRunning: classCurrentlyRunning,
       leftLane,
       rightLane,
@@ -135,7 +143,7 @@ export default function RecordScreen() {
 
     try {
       await StorageService.saveReading(reading);
-      Alert.alert('Success', 'Reading saved successfully!', [
+      Alert.alert('Success', `Reading saved successfully for ${selectedYear}!`, [
         {
           text: 'OK',
           onPress: () => {
@@ -309,6 +317,16 @@ export default function RecordScreen() {
       >
         <Text style={styles.title}>Record Data</Text>
 
+        <View style={styles.yearBadge}>
+          <IconSymbol
+            ios_icon_name="calendar"
+            android_material_icon_name="calendar_today"
+            size={18}
+            color={colors.primary}
+          />
+          <Text style={styles.yearBadgeText}>Recording for {selectedYear}</Text>
+        </View>
+
         <View style={styles.trackSelector}>
           <Text style={styles.label}>Select Track *</Text>
           <TouchableOpacity
@@ -417,7 +435,25 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
     title: {
       fontSize: 28,
       fontWeight: '700',
+      marginBottom: 12,
+      color: colors.text,
+    },
+    yearBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 20,
+      alignSelf: 'flex-start',
       marginBottom: 20,
+      gap: 6,
+      boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.1)',
+      elevation: 1,
+    },
+    yearBadgeText: {
+      fontSize: 14,
+      fontWeight: '600',
       color: colors.text,
     },
     trackSelector: {

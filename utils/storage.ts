@@ -58,7 +58,24 @@ export const StorageService = {
   async getReadings(): Promise<TrackReading[]> {
     try {
       const readingsJson = await AsyncStorage.getItem(READINGS_KEY);
-      return readingsJson ? JSON.parse(readingsJson) : [];
+      const readings = readingsJson ? JSON.parse(readingsJson) : [];
+      
+      // Migrate old readings without year field
+      const migratedReadings = readings.map((reading: TrackReading) => {
+        if (!reading.year && reading.timestamp) {
+          const year = new Date(reading.timestamp).getFullYear();
+          console.log('Migrating reading to year:', year);
+          return { ...reading, year };
+        }
+        return reading;
+      });
+      
+      // Save migrated data if any changes were made
+      if (migratedReadings.some((r: TrackReading, i: number) => r.year !== readings[i]?.year)) {
+        await AsyncStorage.setItem(READINGS_KEY, JSON.stringify(migratedReadings));
+      }
+      
+      return migratedReadings;
     } catch (error) {
       console.error('Error getting readings:', error);
       return [];
@@ -71,6 +88,48 @@ export const StorageService = {
       return readings.filter(r => r.trackId === trackId);
     } catch (error) {
       console.error('Error getting readings by track:', error);
+      return [];
+    }
+  },
+
+  async getReadingsByTrackAndYear(trackId: string, year: number): Promise<TrackReading[]> {
+    try {
+      const readings = await this.getReadings();
+      return readings.filter(r => r.trackId === trackId && r.year === year);
+    } catch (error) {
+      console.error('Error getting readings by track and year:', error);
+      return [];
+    }
+  },
+
+  async getAvailableYears(): Promise<number[]> {
+    try {
+      const readings = await this.getReadings();
+      const years = new Set<number>();
+      readings.forEach(reading => {
+        if (reading.year) {
+          years.add(reading.year);
+        }
+      });
+      return Array.from(years).sort((a, b) => b - a);
+    } catch (error) {
+      console.error('Error getting available years:', error);
+      return [];
+    }
+  },
+
+  async getAvailableYearsForTrack(trackId: string): Promise<number[]> {
+    try {
+      const readings = await this.getReadingsByTrack(trackId);
+      const years = new Set<number>();
+      readings.forEach(reading => {
+        if (reading.year) {
+          years.add(reading.year);
+        }
+      });
+      return Array.from(years).sort((a, b) => b - a);
+    } catch (error) {
+      console.error('Error getting available years for track:', error);
       return [];
     }
   },

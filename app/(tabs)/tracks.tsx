@@ -24,16 +24,21 @@ export default function TracksScreen() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [trackName, setTrackName] = useState('');
   const [trackLocation, setTrackLocation] = useState('');
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [showYearPicker, setShowYearPicker] = useState(false);
 
   useEffect(() => {
     console.log('TracksScreen mounted');
     loadTracks();
+    loadAvailableYears();
   }, []);
 
   useFocusEffect(
     useCallback(() => {
       console.log('Tracks screen focused, reloading tracks');
       loadTracks();
+      loadAvailableYears();
     }, [])
   );
 
@@ -45,6 +50,23 @@ export default function TracksScreen() {
       setTracks(loadedTracks.sort((a, b) => b.createdAt - a.createdAt));
     } catch (error) {
       console.error('Error loading tracks:', error);
+    }
+  };
+
+  const loadAvailableYears = async () => {
+    try {
+      const years = await StorageService.getAvailableYears();
+      const currentYear = new Date().getFullYear();
+      
+      // Always include current year even if no data exists
+      if (!years.includes(currentYear)) {
+        years.unshift(currentYear);
+      }
+      
+      console.log('Available years:', years);
+      setAvailableYears(years);
+    } catch (error) {
+      console.error('Error loading available years:', error);
     }
   };
 
@@ -88,6 +110,7 @@ export default function TracksScreen() {
             try {
               await StorageService.deleteTrack(track.id);
               loadTracks();
+              loadAvailableYears();
               Alert.alert('Success', 'Track deleted successfully');
             } catch (error) {
               console.error('Error deleting track:', error);
@@ -100,18 +123,22 @@ export default function TracksScreen() {
   }, []);
 
   const handleTrackPress = useCallback((track: Track) => {
-    console.log('Track pressed:', track.name, 'ID:', track.id);
+    console.log('Track pressed:', track.name, 'ID:', track.id, 'Year:', selectedYear);
     try {
       router.push({
         pathname: '/(tabs)/record',
-        params: { trackId: track.id, trackName: track.name },
+        params: { 
+          trackId: track.id, 
+          trackName: track.name,
+          year: selectedYear.toString(),
+        },
       });
       console.log('Navigation initiated successfully');
     } catch (error) {
       console.error('Navigation error:', error);
       Alert.alert('Navigation Error', 'Failed to navigate to record screen. Please try again.');
     }
-  }, [router]);
+  }, [router, selectedYear]);
 
   const styles = StyleSheet.create({
     container: {
@@ -146,6 +173,61 @@ export default function TracksScreen() {
       justifyContent: 'center',
       boxShadow: '0px 2px 8px rgba(0, 123, 255, 0.3)',
       elevation: 4,
+    },
+    yearSelector: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 20,
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
+    yearLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 8,
+    },
+    yearButton: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+    },
+    yearButtonText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    yearList: {
+      marginTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 12,
+    },
+    yearOption: {
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+      marginBottom: 8,
+      backgroundColor: colors.background,
+    },
+    yearOptionSelected: {
+      backgroundColor: colors.primary,
+    },
+    yearOptionText: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: colors.text,
+      textAlign: 'center',
+    },
+    yearOptionTextSelected: {
+      color: '#ffffff',
     },
     addForm: {
       backgroundColor: colors.card,
@@ -273,6 +355,57 @@ export default function TracksScreen() {
               color="#ffffff"
             />
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.yearSelector}>
+          <Text style={styles.yearLabel}>Select Year</Text>
+          <TouchableOpacity
+            style={styles.yearButton}
+            onPress={() => {
+              console.log('Year picker toggled');
+              Keyboard.dismiss();
+              setShowYearPicker(!showYearPicker);
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.yearButtonText}>{selectedYear}</Text>
+            <IconSymbol
+              ios_icon_name="calendar"
+              android_material_icon_name={showYearPicker ? 'expand_less' : 'expand_more'}
+              size={20}
+              color={colors.text}
+            />
+          </TouchableOpacity>
+
+          {showYearPicker && (
+            <View style={styles.yearList}>
+              {availableYears.map((year, index) => (
+                <React.Fragment key={index}>
+                  <TouchableOpacity
+                    style={[
+                      styles.yearOption,
+                      selectedYear === year && styles.yearOptionSelected,
+                    ]}
+                    onPress={() => {
+                      console.log('Year selected:', year);
+                      setSelectedYear(year);
+                      setShowYearPicker(false);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.yearOptionText,
+                        selectedYear === year && styles.yearOptionTextSelected,
+                      ]}
+                    >
+                      {year}
+                    </Text>
+                  </TouchableOpacity>
+                </React.Fragment>
+              ))}
+            </View>
+          )}
         </View>
 
         {showAddForm && (

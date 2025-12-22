@@ -22,6 +22,9 @@ export default function BrowseScreen() {
   const [readings, setReadings] = useState<TrackReading[]>([]);
   const [groupedReadings, setGroupedReadings] = useState<DayReadings[]>([]);
   const [showTrackPicker, setShowTrackPicker] = useState(false);
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [showYearPicker, setShowYearPicker] = useState(false);
 
   useEffect(() => {
     loadTracks();
@@ -32,16 +35,18 @@ export default function BrowseScreen() {
       console.log('Browse screen focused, reloading data');
       loadTracks();
       if (selectedTrack) {
-        loadReadings(selectedTrack.id);
+        loadReadings(selectedTrack.id, selectedYear);
+        loadAvailableYearsForTrack(selectedTrack.id);
       }
-    }, [selectedTrack])
+    }, [selectedTrack, selectedYear])
   );
 
   useEffect(() => {
     if (selectedTrack) {
-      loadReadings(selectedTrack.id);
+      loadReadings(selectedTrack.id, selectedYear);
+      loadAvailableYearsForTrack(selectedTrack.id);
     }
-  }, [selectedTrack]);
+  }, [selectedTrack, selectedYear]);
 
   const loadTracks = async () => {
     console.log('Loading tracks in BrowseScreen...');
@@ -53,8 +58,27 @@ export default function BrowseScreen() {
     }
   };
 
-  const loadReadings = async (trackId: string) => {
-    const trackReadings = await StorageService.getReadingsByTrack(trackId);
+  const loadAvailableYearsForTrack = async (trackId: string) => {
+    try {
+      const years = await StorageService.getAvailableYearsForTrack(trackId);
+      const currentYear = new Date().getFullYear();
+      
+      // Always include current year even if no data exists
+      if (!years.includes(currentYear)) {
+        years.unshift(currentYear);
+      }
+      
+      console.log('Available years for track:', years);
+      setAvailableYears(years);
+    } catch (error) {
+      console.error('Error loading available years for track:', error);
+    }
+  };
+
+  const loadReadings = async (trackId: string, year: number) => {
+    console.log('Loading readings for track:', trackId, 'year:', year);
+    const trackReadings = await StorageService.getReadingsByTrackAndYear(trackId, year);
+    console.log('Found readings:', trackReadings.length);
     const sorted = trackReadings.sort((a, b) => b.timestamp - a.timestamp);
     setReadings(sorted);
 
@@ -109,6 +133,59 @@ export default function BrowseScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.title}>Browse Data</Text>
+
+        <View style={styles.yearSelector}>
+          <Text style={styles.label}>Select Year</Text>
+          <TouchableOpacity
+            style={styles.yearButton}
+            onPress={() => setShowYearPicker(!showYearPicker)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.yearButtonText}>{selectedYear}</Text>
+            <IconSymbol
+              ios_icon_name="calendar"
+              android_material_icon_name={showYearPicker ? 'expand_less' : 'expand_more'}
+              size={20}
+              color={colors.text}
+            />
+          </TouchableOpacity>
+
+          {showYearPicker && (
+            <View style={styles.yearList}>
+              {availableYears.length === 0 ? (
+                <Text style={styles.noYearsText}>
+                  No data available yet. Start recording to see years here.
+                </Text>
+              ) : (
+                availableYears.map((year, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[
+                        styles.yearOption,
+                        selectedYear === year && styles.yearOptionSelected,
+                      ]}
+                      onPress={() => {
+                        console.log('Year selected:', year);
+                        setSelectedYear(year);
+                        setShowYearPicker(false);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          styles.yearOptionText,
+                          selectedYear === year && styles.yearOptionTextSelected,
+                        ]}
+                      >
+                        {year}
+                      </Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))
+              )}
+            </View>
+          )}
+        </View>
 
         <View style={styles.trackSelector}>
           <Text style={styles.label}>Select Track</Text>
@@ -165,7 +242,7 @@ export default function BrowseScreen() {
               color={colors.textSecondary}
             />
             <Text style={styles.emptyText}>
-              No readings yet for this track.{'\n'}Start recording data to see it here!
+              No readings yet for {selectedYear}.{'\n'}Start recording data to see it here!
             </Text>
           </View>
         ) : (
@@ -248,6 +325,61 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
       fontWeight: '700',
       marginBottom: 20,
       color: colors.text,
+    },
+    yearSelector: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
+    yearButton: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+    },
+    yearButtonText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    yearList: {
+      marginTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 12,
+    },
+    yearOption: {
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+      marginBottom: 8,
+      backgroundColor: colors.background,
+    },
+    yearOptionSelected: {
+      backgroundColor: colors.primary,
+    },
+    yearOptionText: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: colors.text,
+      textAlign: 'center',
+    },
+    yearOptionTextSelected: {
+      color: '#ffffff',
+    },
+    noYearsText: {
+      fontSize: 14,
+      textAlign: 'center',
+      paddingVertical: 12,
+      color: colors.textSecondary,
     },
     trackSelector: {
       backgroundColor: colors.card,
