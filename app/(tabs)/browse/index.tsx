@@ -37,10 +37,7 @@ export default function BrowseScreen() {
       console.log('Browse screen focused, reloading data');
       loadTracks();
       loadAllAvailableYears();
-      if (selectedTrack) {
-        loadReadings(selectedTrack.id, selectedYear);
-      }
-    }, [selectedTrack, selectedYear])
+    }, [])
   );
 
   useEffect(() => {
