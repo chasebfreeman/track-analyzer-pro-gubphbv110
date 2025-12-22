@@ -1,31 +1,12 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
 import { colors } from '@/styles/commonStyles';
-import { useColorScheme, AppState, Platform } from 'react-native';
+import { useColorScheme } from 'react-native';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  
-  useEffect(() => {
-    console.log('iOS Native Tabs Layout mounted, isDark:', isDark);
-    
-    // Force a re-render after mount to ensure all touch handlers are registered
-    const timer = setTimeout(() => {
-      console.log('iOS tabs initialized');
-    }, 100);
-    
-    // Monitor app state changes
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      console.log('AppState changed to:', nextAppState);
-    });
-    
-    return () => {
-      clearTimeout(timer);
-      subscription.remove();
-    };
-  }, []);
   
   return (
     <NativeTabs
@@ -37,27 +18,15 @@ export default function TabLayout() {
       backgroundColor={isDark ? '#1C1C1E' : '#F2F2F7'}
       backBehavior="history"
     >
-      <NativeTabs.Trigger 
-        name="tracks"
-        disablePopToTop={false}
-        disableScrollToTop={false}
-      >
+      <NativeTabs.Trigger name="tracks">
         <Label>Tracks</Label>
         <Icon sf="map.fill" drawable="map" />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger 
-        name="record"
-        disablePopToTop={false}
-        disableScrollToTop={false}
-      >
+      <NativeTabs.Trigger name="record">
         <Label>Record</Label>
         <Icon sf="plus.circle.fill" drawable="add_circle" />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger 
-        name="browse"
-        disablePopToTop={false}
-        disableScrollToTop={false}
-      >
+      <NativeTabs.Trigger name="browse">
         <Label>Browse</Label>
         <Icon sf="magnifyingglass" drawable="search" />
       </NativeTabs.Trigger>

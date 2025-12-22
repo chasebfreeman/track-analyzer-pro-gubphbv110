@@ -11,7 +11,6 @@ import {
   Image,
   Platform,
   Keyboard,
-  AppState,
 } from 'react-native';
 import { useLocalSearchParams, useFocusEffect, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -27,7 +26,6 @@ export default function RecordScreen() {
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showTrackPicker, setShowTrackPicker] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isReady, setIsReady] = useState(false);
 
   const [leftLane, setLeftLane] = useState<LaneReading>({
     trackTemp: '',
@@ -51,48 +49,22 @@ export default function RecordScreen() {
     notes: '',
   });
 
-  // Load tracks on mount
   useEffect(() => {
     console.log('RecordScreen mounted');
     loadTracks();
-    
-    // Ensure component is ready for interactions
-    const readyTimer = setTimeout(() => {
-      setIsReady(true);
-      console.log('RecordScreen is ready for interactions');
-    }, 100);
-
-    // Monitor app state
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      console.log('RecordScreen - AppState changed to:', nextAppState);
-      if (nextAppState === 'active') {
-        setIsReady(true);
-        loadTracks();
-      }
-    });
-
-    return () => {
-      clearTimeout(readyTimer);
-      subscription.remove();
-    };
   }, []);
 
-  // Use useFocusEffect to handle track selection when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       console.log('Record screen focused');
       console.log('Params:', JSON.stringify(params));
       
-      setIsReady(true);
-      
-      // Reload tracks to ensure we have the latest data
       loadTracks().then(() => {
         console.log('Tracks reloaded on focus');
       });
     }, [params.trackId])
   );
 
-  // Separate effect to handle track selection based on params
   useEffect(() => {
     if (params.trackId && tracks.length > 0) {
       console.log('Attempting to select track with ID:', params.trackId);
@@ -194,11 +166,6 @@ export default function RecordScreen() {
   };
 
   const handleTrackSelect = (track: Track) => {
-    if (!isReady) {
-      console.log('RecordScreen not ready yet, ignoring track selection');
-      return;
-    }
-    
     console.log('Track selected from picker:', track.name);
     setSelectedTrack(track);
     setShowTrackPicker(false);
@@ -341,7 +308,6 @@ export default function RecordScreen() {
               Keyboard.dismiss();
               setShowTrackPicker(!showTrackPicker);
             }}
-            disabled={!isReady}
           >
             <Text style={styles.trackButtonText}>
               {selectedTrack ? selectedTrack.name : 'Choose a track...'}
@@ -369,7 +335,6 @@ export default function RecordScreen() {
                         selectedTrack?.id === track.id && styles.trackOptionSelected,
                       ]}
                       onPress={() => handleTrackSelect(track)}
-                      disabled={!isReady}
                     >
                       <Text
                         style={[

@@ -10,7 +10,6 @@ import {
   Alert,
   Platform,
   Keyboard,
-  AppState,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { colors, commonStyles } from '@/styles/commonStyles';
@@ -24,38 +23,15 @@ export default function TracksScreen() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [trackName, setTrackName] = useState('');
   const [trackLocation, setTrackLocation] = useState('');
-  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     console.log('TracksScreen mounted');
     loadTracks();
-    
-    // Ensure component is ready for interactions
-    const readyTimer = setTimeout(() => {
-      setIsReady(true);
-      console.log('TracksScreen is ready for interactions');
-    }, 100);
-
-    // Monitor app state
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      console.log('TracksScreen - AppState changed to:', nextAppState);
-      if (nextAppState === 'active') {
-        setIsReady(true);
-        loadTracks();
-      }
-    });
-
-    return () => {
-      clearTimeout(readyTimer);
-      subscription.remove();
-    };
   }, []);
 
-  // Reload tracks when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       console.log('Tracks screen focused, reloading tracks');
-      setIsReady(true);
       loadTracks();
     }, [])
   );
@@ -123,14 +99,8 @@ export default function TracksScreen() {
   }, []);
 
   const handleTrackPress = useCallback((track: Track) => {
-    if (!isReady) {
-      console.log('TracksScreen not ready yet, ignoring press');
-      return;
-    }
-    
     console.log('Track pressed:', track.name, 'ID:', track.id);
     try {
-      // Use push instead of replace to maintain proper navigation stack
       router.push({
         pathname: '/(tabs)/record',
         params: { trackId: track.id, trackName: track.name },
@@ -140,7 +110,7 @@ export default function TracksScreen() {
       console.error('Navigation error:', error);
       Alert.alert('Navigation Error', 'Failed to navigate to record screen. Please try again.');
     }
-  }, [router, isReady]);
+  }, [router]);
 
   return (
     <View style={styles.container}>
@@ -162,7 +132,6 @@ export default function TracksScreen() {
               }
             }}
             activeOpacity={0.7}
-            disabled={!isReady}
           >
             <IconSymbol
               ios_icon_name="plus"
@@ -219,7 +188,6 @@ export default function TracksScreen() {
                   style={styles.trackCard}
                   onPress={() => handleTrackPress(track)}
                   activeOpacity={0.7}
-                  disabled={!isReady}
                 >
                   <View style={styles.trackInfo}>
                     <View style={styles.trackIcon}>
@@ -257,7 +225,6 @@ export default function TracksScreen() {
                       handleDeleteTrack(track);
                     }}
                     activeOpacity={0.7}
-                    disabled={!isReady}
                   >
                     <IconSymbol
                       ios_icon_name="trash"
