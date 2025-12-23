@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "Track Analyzer Pro",
@@ -41,7 +42,10 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {}
+      "router": {},
+      "eas": {
+        "projectId": "fdgnmcaxiclsqlydftpq"
+      }
     }
   },
   "scheme": "Track Analyzer Pro"
