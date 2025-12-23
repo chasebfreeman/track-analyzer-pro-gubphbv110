@@ -19,30 +19,56 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    console.log('RootLayout: Component mounted');
+    setMounted(true);
+    
+    // Safety timeout - if app doesn't load in 10 seconds, show error
+    const safetyTimeout = setTimeout(() => {
+      console.error('RootLayout: App initialization timeout');
+      setError('App initialization timeout. Please refresh the page.');
+    }, 10000);
+
+    return () => {
+      clearTimeout(safetyTimeout);
+    };
+  }, []);
 
   useEffect(() => {
     if (loaded) {
-      console.log('Fonts loaded, hiding splash screen');
+      console.log('RootLayout: Fonts loaded, hiding splash screen');
       SplashScreen.hideAsync().catch((err) => {
-        console.error('Error hiding splash screen:', err);
+        console.error('RootLayout: Error hiding splash screen:', err);
       });
     }
   }, [loaded]);
 
   useEffect(() => {
     // Global error handler
-    const errorHandler = (error: ErrorEvent) => {
-      console.error('Global error:', error);
-      setError(error.message);
+    const errorHandler = (event: ErrorEvent) => {
+      console.error('RootLayout: Global error:', event.error || event.message);
+      setError(event.message || 'An unexpected error occurred');
+    };
+
+    const unhandledRejectionHandler = (event: PromiseRejectionEvent) => {
+      console.error('RootLayout: Unhandled promise rejection:', event.reason);
+      setError('An unexpected error occurred');
     };
 
     if (typeof window !== 'undefined') {
       window.addEventListener('error', errorHandler);
-      return () => window.removeEventListener('error', errorHandler);
+      window.addEventListener('unhandledrejection', unhandledRejectionHandler);
+      return () => {
+        window.removeEventListener('error', errorHandler);
+        window.removeEventListener('unhandledrejection', unhandledRejectionHandler);
+      };
     }
   }, []);
 
-  if (!loaded) {
+  if (!loaded || !mounted) {
+    console.log('RootLayout: Waiting for fonts to load or component to mount');
     return null;
   }
 
@@ -55,6 +81,8 @@ export default function RootLayout() {
       </View>
     );
   }
+
+  console.log('RootLayout: Rendering app');
 
   return (
     <SupabaseAuthProvider>

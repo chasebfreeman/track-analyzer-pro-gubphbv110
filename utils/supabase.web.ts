@@ -12,30 +12,52 @@ export const isSupabaseConfigured = () => {
   return configured;
 };
 
+// Simple localStorage wrapper with error handling
+const createStorageAdapter = () => {
+  return {
+    getItem: (key: string) => {
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          const value = window.localStorage.getItem(key);
+          console.log('Storage getItem:', key, value ? 'found' : 'not found');
+          return value;
+        }
+      } catch (error) {
+        console.error('Error getting item from localStorage:', error);
+      }
+      return null;
+    },
+    setItem: (key: string, value: string) => {
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem(key, value);
+          console.log('Storage setItem:', key);
+        }
+      } catch (error) {
+        console.error('Error setting item in localStorage:', error);
+      }
+    },
+    removeItem: (key: string) => {
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.removeItem(key);
+          console.log('Storage removeItem:', key);
+        }
+      } catch (error) {
+        console.error('Error removing item from localStorage:', error);
+      }
+    },
+  };
+};
+
 // Create Supabase client with localStorage for session persistence on web
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    storage: {
-      getItem: (key: string) => {
-        if (typeof window !== 'undefined') {
-          return window.localStorage.getItem(key);
-        }
-        return null;
-      },
-      setItem: (key: string, value: string) => {
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem(key, value);
-        }
-      },
-      removeItem: (key: string) => {
-        if (typeof window !== 'undefined') {
-          window.localStorage.removeItem(key);
-        }
-      },
-    },
+    storage: createStorageAdapter(),
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    flowType: 'pkce',
   },
 });
 

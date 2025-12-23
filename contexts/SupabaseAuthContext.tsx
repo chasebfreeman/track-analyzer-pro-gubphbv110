@@ -33,10 +33,28 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   const [isLoading, setIsLoading] = useState(true);
   const [isPinSetup, setIsPinSetup] = useState(false);
   const [isSupabaseEnabled, setIsSupabaseEnabled] = useState(false);
+  const [initializationComplete, setInitializationComplete] = useState(false);
 
   useEffect(() => {
     console.log('SupabaseAuthContext: Initializing... Platform:', Platform.OS);
-    initializeAuth();
+    
+    // Set a hard timeout to ensure we don't hang forever
+    const hardTimeout = setTimeout(() => {
+      if (!initializationComplete) {
+        console.error('SupabaseAuthContext: Hard timeout reached, forcing local auth');
+        setIsSupabaseEnabled(false);
+        initializeLocalAuth();
+      }
+    }, 5000);
+
+    initializeAuth().finally(() => {
+      clearTimeout(hardTimeout);
+      setInitializationComplete(true);
+    });
+
+    return () => {
+      clearTimeout(hardTimeout);
+    };
   }, []);
 
   const initializeAuth = async () => {
@@ -44,11 +62,12 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       console.log('SupabaseAuthContext: Checking Supabase configuration...');
       const supabaseConfigured = isSupabaseConfigured();
       console.log('SupabaseAuthContext: Supabase configured:', supabaseConfigured);
-      setIsSupabaseEnabled(supabaseConfigured);
-
+      
       if (supabaseConfigured) {
+        setIsSupabaseEnabled(true);
         await initializeSupabaseAuth();
       } else {
+        setIsSupabaseEnabled(false);
         await initializeLocalAuth();
       }
     } catch (error) {
@@ -63,19 +82,13 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     try {
       console.log('SupabaseAuthContext: Initializing Supabase auth...');
       
-      // Get initial session with timeout
-      const sessionPromise = supabase.auth.getSession();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Session fetch timeout')), 5000)
-      );
+      // Try to get session with a short timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
 
-      const result = await Promise.race([
-        sessionPromise,
-        timeoutPromise
-      ]) as any;
-
-      if (result && result.data) {
-        const { data: { session: initialSession }, error } = result;
+      try {
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        clearTimeout(timeoutId);
 
         if (error) {
           console.error('SupabaseAuthContext: Error getting session:', error);
@@ -101,8 +114,10 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
         return () => {
           subscription.unsubscribe();
         };
-      } else {
-        throw new Error('Failed to get session');
+      } catch (sessionError) {
+        clearTimeout(timeoutId);
+        console.error('SupabaseAuthContext: Session fetch failed:', sessionError);
+        throw sessionError;
       }
     } catch (error) {
       console.error('SupabaseAuthContext: Error initializing Supabase auth:', error);

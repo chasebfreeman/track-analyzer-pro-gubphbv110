@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { AuthService } from '@/utils/authService';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -21,7 +21,7 @@ export default function LoginScreen() {
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [authTypes, setAuthTypes] = useState<string[]>([]);
   const router = useRouter();
-  const { authenticate, authenticateWithBiometrics } = useAuth();
+  const { authenticate, authenticateWithBiometrics } = useSupabaseAuth();
 
   useEffect(() => {
     checkBiometricAvailability();
