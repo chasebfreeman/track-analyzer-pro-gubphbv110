@@ -13,6 +13,8 @@ import { useThemeColors } from '@/styles/commonStyles';
 import { StorageService } from '@/utils/storage';
 import { Track, TrackReading, DayReadings } from '@/types/TrackData';
 import { IconSymbol } from '@/components/IconSymbol';
+import DailyReadingChart from '@/components/DailyReadingChart';
+import HistoricalAveragesChart from '@/components/HistoricalAveragesChart';
 
 export default function BrowseScreen() {
   const router = useRouter();
@@ -21,11 +23,14 @@ export default function BrowseScreen() {
   const [filteredTracks, setFilteredTracks] = useState<Track[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [readings, setReadings] = useState<TrackReading[]>([]);
+  const [allTrackReadings, setAllTrackReadings] = useState<TrackReading[]>([]);
   const [groupedReadings, setGroupedReadings] = useState<DayReadings[]>([]);
   const [showTrackPicker, setShowTrackPicker] = useState(false);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [showYearPicker, setShowYearPicker] = useState(false);
+  const [expandedDay, setExpandedDay] = useState<string | null>(null);
+  const [showHistoricalAverages, setShowHistoricalAverages] = useState(false);
 
   useEffect(() => {
     loadTracks();
@@ -43,10 +48,10 @@ export default function BrowseScreen() {
   useEffect(() => {
     if (selectedTrack) {
       loadReadings(selectedTrack.id, selectedYear);
+      loadAllTrackReadings(selectedTrack.id);
     }
   }, [selectedTrack, selectedYear]);
 
-  // Filter tracks when year changes
   useEffect(() => {
     filterTracksByYear();
   }, [selectedYear, allTracks]);
@@ -72,12 +77,10 @@ export default function BrowseScreen() {
     console.log('Tracks with readings for', selectedYear, ':', tracksWithReadings.length);
     setFilteredTracks(tracksWithReadings);
     
-    // If the currently selected track is not in the filtered list, reset selection
     if (selectedTrack && !tracksWithReadings.find(t => t.id === selectedTrack.id)) {
       console.log('Selected track not in filtered list, resetting selection');
       setSelectedTrack(tracksWithReadings.length > 0 ? tracksWithReadings[0] : null);
     } else if (!selectedTrack && tracksWithReadings.length > 0) {
-      // If no track is selected and we have tracks, select the first one
       setSelectedTrack(tracksWithReadings[0]);
     }
   };
@@ -87,26 +90,21 @@ export default function BrowseScreen() {
       const years = await StorageService.getAvailableYears();
       const currentYear = new Date().getFullYear();
       
-      // Create a comprehensive list of years from 2024 to current year + 1
       const allYears = new Set<number>();
       
-      // Add years from data
       years.forEach(year => allYears.add(year));
       
-      // Always include 2024, 2025, current year, and next year
       allYears.add(2024);
       allYears.add(2025);
       allYears.add(currentYear);
       allYears.add(currentYear + 1);
       
-      // Convert to sorted array (newest first)
       const sortedYears = Array.from(allYears).sort((a, b) => b - a);
       
       console.log('Available years:', sortedYears);
       setAvailableYears(sortedYears);
     } catch (error) {
       console.error('Error loading available years:', error);
-      // Fallback to basic years if there's an error
       const currentYear = new Date().getFullYear();
       setAvailableYears([currentYear + 1, currentYear, 2025, 2024].filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => b - a));
     }
@@ -135,6 +133,13 @@ export default function BrowseScreen() {
     setGroupedReadings(groupedArray);
   };
 
+  const loadAllTrackReadings = async (trackId: string) => {
+    console.log('Loading all readings for track:', trackId);
+    const trackReadings = await StorageService.getReadingsByTrack(trackId);
+    console.log('Found all readings:', trackReadings.length);
+    setAllTrackReadings(trackReadings);
+  };
+
   const formatDateWithDay = (dateString: string): string => {
     try {
       const [month, day, year] = dateString.split('/');
@@ -158,6 +163,10 @@ export default function BrowseScreen() {
     } catch (error) {
       console.error('Navigation error:', error);
     }
+  };
+
+  const toggleDayExpansion = (date: string) => {
+    setExpandedDay(expandedDay === date ? null : date);
   };
 
   const styles = getStyles(colors);
@@ -277,6 +286,33 @@ export default function BrowseScreen() {
           )}
         </View>
 
+        {selectedTrack && allTrackReadings.length > 0 && (
+          <TouchableOpacity
+            style={styles.historicalButton}
+            onPress={() => setShowHistoricalAverages(!showHistoricalAverages)}
+            activeOpacity={0.7}
+          >
+            <IconSymbol
+              ios_icon_name="chart.bar"
+              android_material_icon_name="bar_chart"
+              size={20}
+              color={colors.primary}
+            />
+            <Text style={styles.historicalButtonText}>
+              {showHistoricalAverages ? 'Hide' : 'Show'} Historical Averages
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {showHistoricalAverages && selectedTrack && (
+          <View style={styles.historicalSection}>
+            <HistoricalAveragesChart
+              readings={allTrackReadings}
+              trackName={selectedTrack.name}
+            />
+          </View>
+        )}
+
         {readings.length === 0 ? (
           <View style={styles.emptyState}>
             <IconSymbol
@@ -297,9 +333,31 @@ export default function BrowseScreen() {
             {groupedReadings.map((dayGroup, dayIndex) => (
               <React.Fragment key={dayIndex}>
                 <View style={styles.daySection}>
-                  <Text style={styles.dayHeader}>
-                    {formatDateWithDay(dayGroup.date)}
-                  </Text>
+                  <TouchableOpacity
+                    style={styles.dayHeaderContainer}
+                    onPress={() => toggleDayExpansion(dayGroup.date)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.dayHeader}>
+                      {formatDateWithDay(dayGroup.date)}
+                    </Text>
+                    <IconSymbol
+                      ios_icon_name={expandedDay === dayGroup.date ? 'chart.line.uptrend.xyaxis' : 'chart.bar'}
+                      android_material_icon_name={expandedDay === dayGroup.date ? 'show_chart' : 'bar_chart'}
+                      size={20}
+                      color={colors.primary}
+                    />
+                  </TouchableOpacity>
+
+                  {expandedDay === dayGroup.date && (
+                    <View style={styles.chartSection}>
+                      <DailyReadingChart
+                        readings={dayGroup.readings}
+                        date={dayGroup.date}
+                      />
+                    </View>
+                  )}
+
                   {dayGroup.readings.map((reading, readingIndex) => (
                     <React.Fragment key={readingIndex}>
                       <TouchableOpacity
@@ -488,6 +546,31 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
       color: colors.textSecondary,
       lineHeight: 20,
     },
+    historicalButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 20,
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
+    historicalButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    historicalSection: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 20,
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
     emptyState: {
       alignItems: 'center',
       justifyContent: 'center',
@@ -507,11 +590,25 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
     daySection: {
       marginBottom: 12,
     },
+    dayHeaderContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+      paddingVertical: 8,
+    },
     dayHeader: {
       fontSize: 18,
       fontWeight: '600',
-      marginBottom: 12,
       color: colors.text,
+    },
+    chartSection: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
     },
     readingCard: {
       backgroundColor: colors.card,
