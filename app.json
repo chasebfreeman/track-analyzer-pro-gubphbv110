@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "Track Analyzer Pro",
@@ -43,6 +44,5 @@
     "extra": {
       "router": {}
     }
-  },
-  "scheme": "Track Analyzer Pro"
+  }
 }

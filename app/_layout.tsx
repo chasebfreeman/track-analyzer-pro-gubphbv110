@@ -18,45 +18,33 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
-  const [initTimeout, setInitTimeout] = useState(false);
+  const [forceRender, setForceRender] = useState(false);
 
   useEffect(() => {
     console.log('RootLayout: Component mounted, Platform:', Platform.OS);
     
-    // Set a timeout to force initialization after 3 seconds
+    // Force render after 1.5 seconds if fonts haven't loaded
     const timeout = setTimeout(() => {
-      console.log('RootLayout: Initialization timeout reached, forcing app to load');
-      setInitTimeout(true);
-    }, 3000);
+      console.log('RootLayout: Force render timeout reached');
+      setForceRender(true);
+    }, 1500);
 
     return () => clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
-    if (loaded) {
-      console.log('RootLayout: Fonts loaded, hiding splash screen');
+    if (loaded || forceRender) {
+      console.log('RootLayout: Ready to show app, hiding splash screen');
       SplashScreen.hideAsync().catch((err) => {
         console.error('RootLayout: Error hiding splash screen:', err);
       });
     }
-  }, [loaded]);
+  }, [loaded, forceRender]);
 
-  // Show loading screen with timeout
-  if (!loaded && !initTimeout) {
-    console.log('RootLayout: Waiting for fonts to load');
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={{ marginTop: 16, fontSize: 16, color: colors.textSecondary }}>
-          Initializing app...
-        </Text>
-      </View>
-    );
-  }
-
-  // Force render even if fonts aren't loaded after timeout
-  if (initTimeout && !loaded) {
-    console.log('RootLayout: Timeout reached, rendering without custom fonts');
+  // Show loading only briefly
+  if (!loaded && !forceRender) {
+    console.log('RootLayout: Waiting for initialization');
+    return null; // Let splash screen show
   }
 
   console.log('RootLayout: Rendering app');

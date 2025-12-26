@@ -37,8 +37,20 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     console.log('SupabaseAuthContext: Initializing... Platform:', Platform.OS);
     
+    // Set a hard timeout to prevent infinite loading
+    const hardTimeout = setTimeout(() => {
+      console.log('SupabaseAuthContext: Hard timeout reached, forcing initialization complete');
+      setIsLoading(false);
+    }, 2000);
+
     // Initialize immediately
-    initializeAuth();
+    initializeAuth().finally(() => {
+      clearTimeout(hardTimeout);
+    });
+
+    return () => {
+      clearTimeout(hardTimeout);
+    };
   }, []);
 
   const initializeAuth = async () => {
@@ -50,7 +62,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       if (supabaseConfigured) {
         setIsSupabaseEnabled(true);
         
-        // Set up auth listener first (non-blocking)
+        // Set up auth listener (non-blocking)
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
           console.log('SupabaseAuthContext: Auth state changed:', _event);
           setSession(session);
@@ -58,44 +70,17 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
           setIsAuthenticated(!!session);
         });
 
-        // For web, mark as loaded immediately and fetch session in background
-        if (Platform.OS === 'web') {
-          console.log('SupabaseAuthContext: Web platform - immediate initialization');
-          
-          // Set loading to false immediately on web
-          setIsLoading(false);
-          
-          // Fetch session in background with aggressive timeout
-          Promise.race([
-            supabase.auth.getSession(),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1000))
-          ])
-            .then((result: any) => {
-              const { data: { session: initialSession }, error } = result;
-              if (error) {
-                console.error('SupabaseAuthContext: Error getting session:', error);
-                return;
-              }
-              if (initialSession) {
-                console.log('SupabaseAuthContext: Initial session found');
-                setSession(initialSession);
-                setUser(initialSession.user);
-                setIsAuthenticated(true);
-              } else {
-                console.log('SupabaseAuthContext: No initial session');
-              }
-            })
-            .catch((error) => {
-              console.log('SupabaseAuthContext: Session fetch timeout or error:', error.message);
-            });
-        } else {
-          // For native, wait for session with timeout
-          try {
-            const { data: { session: initialSession }, error } = await Promise.race([
-              supabase.auth.getSession(),
-              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
-            ]) as any;
+        // Try to get session with timeout
+        try {
+          const sessionPromise = supabase.auth.getSession();
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Session fetch timeout')), 1500)
+          );
 
+          const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
+          
+          if (result && result.data) {
+            const { data: { session: initialSession }, error } = result;
             if (error) {
               console.error('SupabaseAuthContext: Error getting session:', error);
             } else if (initialSession) {
@@ -106,12 +91,12 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
             } else {
               console.log('SupabaseAuthContext: No initial session');
             }
-          } catch (error) {
-            console.log('SupabaseAuthContext: Session fetch timeout or error:', error);
           }
-          
-          setIsLoading(false);
+        } catch (error) {
+          console.log('SupabaseAuthContext: Session fetch timeout or error, continuing without session');
         }
+
+        setIsLoading(false);
 
         return () => {
           subscription.unsubscribe();
