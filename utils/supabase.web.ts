@@ -14,39 +14,31 @@ export const isSupabaseConfigured = () => {
 
 // Simple localStorage wrapper with error handling and fallback
 const createStorageAdapter = () => {
-  // Check if localStorage is available
-  const isLocalStorageAvailable = () => {
-    try {
-      if (typeof window === 'undefined' || !window.localStorage) {
-        console.log('localStorage: window or localStorage not available');
-        return false;
-      }
-      // Test if we can actually use it
+  // In-memory fallback storage
+  const memoryStorage: { [key: string]: string } = {};
+  let hasLocalStorage = false;
+
+  // Check if localStorage is available (synchronously)
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
       const testKey = '__supabase_test__';
       window.localStorage.setItem(testKey, 'test');
       window.localStorage.removeItem(testKey);
+      hasLocalStorage = true;
       console.log('localStorage: available and working');
-      return true;
-    } catch (error) {
-      console.warn('localStorage not available:', error);
-      return false;
     }
-  };
-
-  const hasLocalStorage = isLocalStorageAvailable();
-
-  // In-memory fallback storage
-  const memoryStorage: { [key: string]: string } = {};
+  } catch (error) {
+    console.warn('localStorage not available, using memory storage:', error);
+    hasLocalStorage = false;
+  }
 
   return {
     getItem: (key: string) => {
       try {
         if (hasLocalStorage) {
-          const value = window.localStorage.getItem(key);
-          return value;
-        } else {
-          return memoryStorage[key] || null;
+          return window.localStorage.getItem(key);
         }
+        return memoryStorage[key] || null;
       } catch (error) {
         console.error('Error getting item from storage:', error);
         return memoryStorage[key] || null;
@@ -56,9 +48,8 @@ const createStorageAdapter = () => {
       try {
         if (hasLocalStorage) {
           window.localStorage.setItem(key, value);
-        } else {
-          memoryStorage[key] = value;
         }
+        memoryStorage[key] = value;
       } catch (error) {
         console.error('Error setting item in storage:', error);
         memoryStorage[key] = value;
@@ -68,9 +59,8 @@ const createStorageAdapter = () => {
       try {
         if (hasLocalStorage) {
           window.localStorage.removeItem(key);
-        } else {
-          delete memoryStorage[key];
         }
+        delete memoryStorage[key];
       } catch (error) {
         console.error('Error removing item from storage:', error);
         delete memoryStorage[key];
