@@ -37,25 +37,15 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     console.log('SupabaseAuthContext: Initializing... Platform:', Platform.OS);
     
-    // Set a hard timeout to prevent infinite loading
-    const hardTimeout = setTimeout(() => {
-      console.log('SupabaseAuthContext: Hard timeout reached, forcing initialization complete');
-      setIsLoading(false);
-    }, 2000);
-
-    // Initialize immediately
-    initializeAuth().finally(() => {
-      clearTimeout(hardTimeout);
-    });
-
-    return () => {
-      clearTimeout(hardTimeout);
-    };
+    // Initialize immediately without blocking
+    initializeAuth();
   }, []);
 
   const initializeAuth = async () => {
     try {
-      console.log('SupabaseAuthContext: Checking Supabase configuration...');
+      console.log('SupabaseAuthContext: Starting initialization...');
+      
+      // Check Supabase configuration synchronously
       const supabaseConfigured = isSupabaseConfigured();
       console.log('SupabaseAuthContext: Supabase configured:', supabaseConfigured);
       
@@ -70,17 +60,9 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
           setIsAuthenticated(!!session);
         });
 
-        // Try to get session with timeout
-        try {
-          const sessionPromise = supabase.auth.getSession();
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Session fetch timeout')), 1500)
-          );
-
-          const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
-          
-          if (result && result.data) {
-            const { data: { session: initialSession }, error } = result;
+        // Try to get session without blocking
+        supabase.auth.getSession()
+          .then(({ data: { session: initialSession }, error }) => {
             if (error) {
               console.error('SupabaseAuthContext: Error getting session:', error);
             } else if (initialSession) {
@@ -91,12 +73,14 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
             } else {
               console.log('SupabaseAuthContext: No initial session');
             }
-          }
-        } catch (error) {
-          console.log('SupabaseAuthContext: Session fetch timeout or error, continuing without session');
-        }
-
-        setIsLoading(false);
+          })
+          .catch((error) => {
+            console.log('SupabaseAuthContext: Session fetch error, continuing without session:', error);
+          })
+          .finally(() => {
+            setIsLoading(false);
+            console.log('SupabaseAuthContext: Supabase initialization complete');
+          });
 
         return () => {
           subscription.unsubscribe();
