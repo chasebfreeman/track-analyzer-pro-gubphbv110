@@ -4,7 +4,7 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 import { useColorScheme, Platform } from 'react-native';
 import { SupabaseAuthProvider } from '@/contexts/SupabaseAuthContext';
@@ -17,22 +17,27 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+  const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
     console.log('RootLayout: useEffect triggered, loaded:', loaded, 'error:', error, 'Platform:', Platform.OS);
     
     if (loaded || error) {
-      console.log('RootLayout: Fonts loaded or error occurred, hiding splash screen');
-      // Hide splash screen immediately when fonts are loaded
-      SplashScreen.hideAsync().catch((err) => {
-        console.error('RootLayout: Error hiding splash screen:', err);
-      });
+      console.log('RootLayout: Fonts loaded or error occurred');
+      // Give a small delay to ensure auth context initializes
+      setTimeout(() => {
+        setAppReady(true);
+        console.log('RootLayout: App ready, hiding splash screen');
+        SplashScreen.hideAsync().catch((err) => {
+          console.error('RootLayout: Error hiding splash screen:', err);
+        });
+      }, 100);
     }
   }, [loaded, error]);
 
-  // Don't render until fonts are loaded
-  if (!loaded && !error) {
-    console.log('RootLayout: Waiting for fonts to load');
+  // Don't render until fonts are loaded and app is ready
+  if (!appReady) {
+    console.log('RootLayout: Waiting for app to be ready');
     return null;
   }
 

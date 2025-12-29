@@ -64,7 +64,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
           try {
             const sessionPromise = supabase.auth.getSession();
             const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Session timeout')), 500)
+              setTimeout(() => reject(new Error('Session timeout')), 1000)
             );
             
             const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
@@ -127,8 +127,13 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
         }
       } finally {
         if (mounted) {
-          setIsLoading(false);
-          console.log('SupabaseAuthContext: Initialization complete');
+          console.log('SupabaseAuthContext: Initialization complete, setting isLoading to false');
+          // Add a small delay to ensure state is properly set before hiding loading
+          setTimeout(() => {
+            if (mounted) {
+              setIsLoading(false);
+            }
+          }, 100);
         }
       }
     };
@@ -253,7 +258,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     }
   };
 
-  console.log('SupabaseAuthContext: Rendering provider, isLoading:', isLoading);
+  console.log('SupabaseAuthContext: Rendering provider, isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'isPinSetup:', isPinSetup);
 
   return (
     <SupabaseAuthContext.Provider
