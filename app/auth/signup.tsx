@@ -15,25 +15,46 @@ import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function LoginScreen() {
+export default function SignupScreen() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signInWithEmail } = useAuth();
+  const { signUpWithEmail } = useAuth();
   const router = useRouter();
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Please enter both email and password");
+  const handleSignup = async () => {
+    if (!name || !email || !password || !confirmPassword) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match");
+      return;
+    }
+
+    if (password.length < 8) {
+      Alert.alert("Error", "Password must be at least 8 characters");
       return;
     }
 
     setLoading(true);
     try {
-      await signInWithEmail(email, password);
-      router.replace("/(tabs)");
+      await signUpWithEmail(email, password, name);
+      Alert.alert(
+        "Success",
+        "Account created successfully! You can now sign in.",
+        [
+          {
+            text: "OK",
+            onPress: () => router.replace("/auth/login"),
+          },
+        ]
+      );
     } catch (error: any) {
-      Alert.alert("Login Failed", error.message || "Invalid credentials");
+      Alert.alert("Signup Failed", error.message || "Could not create account");
     } finally {
       setLoading(false);
     }
@@ -46,8 +67,18 @@ export default function LoginScreen() {
         style={styles.keyboardView}
       >
         <View style={styles.content}>
-          <Text style={styles.title}>Track Specialist</Text>
-          <Text style={styles.subtitle}>Sign in to continue</Text>
+          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.subtitle}>Join your team</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            placeholderTextColor="#999"
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="words"
+            autoComplete="name"
+          />
 
           <TextInput
             style={styles.input}
@@ -62,32 +93,42 @@ export default function LoginScreen() {
 
           <TextInput
             style={styles.input}
-            placeholder="Password"
+            placeholder="Password (min 8 characters)"
             placeholderTextColor="#999"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
-            autoComplete="password"
+            autoComplete="password-new"
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm Password"
+            placeholderTextColor="#999"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+            autoComplete="password-new"
           />
 
           <TouchableOpacity
             style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleLogin}
+            onPress={handleSignup}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Sign In</Text>
+              <Text style={styles.buttonText}>Create Account</Text>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.linkButton}
-            onPress={() => router.push("/auth/signup")}
+            onPress={() => router.back()}
           >
             <Text style={styles.linkText}>
-              Don&apos;t have an account? <Text style={styles.linkTextBold}>Sign Up</Text>
+              Already have an account? <Text style={styles.linkTextBold}>Sign In</Text>
             </Text>
           </TouchableOpacity>
         </View>
