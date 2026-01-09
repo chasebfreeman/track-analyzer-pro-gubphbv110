@@ -1,9 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { SupabaseStorageService } from '@/utils/supabaseStorage';
+import { UserProfileService } from '@/utils/userProfileService';
+import { UserProfile } from '@/types/UserProfile';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 
@@ -16,7 +19,22 @@ export default function SettingsScreen() {
     logout, 
     isAuthenticated 
   } = useSupabaseAuth();
+  const { currentUser, setCurrentUser } = useUser();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      const profiles = await UserProfileService.getUserProfiles();
+      setAllUsers(profiles);
+    } catch (error) {
+      console.error('Error loading users:', error);
+    }
+  };
 
   const handleLogout = async () => {
     Alert.alert(
@@ -33,11 +51,33 @@ export default function SettingsScreen() {
             } else {
               logout();
             }
-            router.replace('/auth/login');
+            await setCurrentUser(null);
+            router.replace('/auth/user-selection');
           },
         },
       ]
     );
+  };
+
+  const handleSwitchUser = () => {
+    Alert.alert(
+      'Switch User',
+      'Switch to a different user account?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Switch',
+          onPress: async () => {
+            await setCurrentUser(null);
+            router.replace('/auth/user-selection');
+          },
+        },
+      ]
+    );
+  };
+
+  const handleManageUsers = () => {
+    router.push('/settings/manage-users' as any);
   };
 
   const handleSyncData = async () => {
@@ -79,6 +119,70 @@ export default function SettingsScreen() {
       <View style={styles.content}>
         <Text style={styles.title}>Settings</Text>
 
+        {/* Current User Section */}
+        {currentUser && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Current User</Text>
+            
+            <View style={styles.card}>
+              <View style={styles.userRow}>
+                <View style={[styles.userAvatar, { backgroundColor: currentUser.color }]}>
+                  <Text style={styles.userInitial}>
+                    {currentUser.name.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+                <View style={styles.userInfo}>
+                  <Text style={styles.userName}>{currentUser.name}</Text>
+                  <Text style={styles.userSubtext}>Logged in</Text>
+                </View>
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.button} onPress={handleSwitchUser}>
+              <IconSymbol
+                ios_icon_name="arrow.left.arrow.right"
+                android_material_icon_name="swap-horiz"
+                size={20}
+                color="#FFFFFF"
+              />
+              <Text style={styles.buttonText}>Switch User</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* User Management Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>User Management</Text>
+          
+          <View style={styles.card}>
+            <View style={styles.infoRow}>
+              <IconSymbol
+                ios_icon_name="person.3.fill"
+                android_material_icon_name="group"
+                size={24}
+                color={colors.primary}
+              />
+              <View style={styles.infoTextContainer}>
+                <Text style={styles.infoTitle}>Team Members</Text>
+                <Text style={styles.infoSubtitle}>{allUsers.length} active users</Text>
+              </View>
+            </View>
+          </View>
+
+          <TouchableOpacity 
+            style={styles.button} 
+            onPress={() => router.push('/auth/create-user')}
+          >
+            <IconSymbol
+              ios_icon_name="person.badge.plus"
+              android_material_icon_name="person-add"
+              size={20}
+              color="#FFFFFF"
+            />
+            <Text style={styles.buttonText}>Add New User</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Cloud Sync Status */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Cloud Sync</Text>
@@ -104,7 +208,7 @@ export default function SettingsScreen() {
             </View>
 
             {isSupabaseEnabled && user && (
-              <View style={styles.userInfo}>
+              <View style={styles.userInfoBox}>
                 <Text style={styles.userEmail}>{user.email}</Text>
               </View>
             )}
@@ -169,7 +273,7 @@ export default function SettingsScreen() {
             <Text style={styles.infoValue}>1.0.0</Text>
             
             <Text style={[styles.infoLabel, { marginTop: 16 }]}>Team Capacity</Text>
-            <Text style={styles.infoValue}>6-10 users</Text>
+            <Text style={styles.infoValue}>Up to 10 users</Text>
           </View>
         </View>
       </View>
@@ -208,6 +312,54 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  userAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  userInitial: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  userSubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  infoTextContainer: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  infoSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -226,7 +378,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
-  userInfo: {
+  userInfoBox: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,

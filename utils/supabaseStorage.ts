@@ -2,6 +2,24 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { Track, TrackReading } from '@/types/TrackData';
 import { StorageService } from './storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const CURRENT_USER_KEY = 'current_user';
+
+// Get current user ID from AsyncStorage
+async function getCurrentUserId(): Promise<string | null> {
+  try {
+    const userJson = await AsyncStorage.getItem(CURRENT_USER_KEY);
+    if (userJson) {
+      const user = JSON.parse(userJson);
+      return user.id;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting current user ID:', error);
+    return null;
+  }
+}
 
 export const SupabaseStorageService = {
   // Check if we should use Supabase or fall back to local storage
@@ -14,10 +32,19 @@ export const SupabaseStorageService = {
     }
 
     try {
-      const { data, error } = await supabase
+      const userId = await getCurrentUserId();
+      
+      let query = supabase
         .from('tracks')
         .select('*')
         .order('created_at', { ascending: false });
+
+      // Filter by user if we have a current user
+      if (userId) {
+        query = query.eq('user_profile_id', userId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching tracks from Supabase:', error);
@@ -42,10 +69,7 @@ export const SupabaseStorageService = {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
+      const userId = await getCurrentUserId();
 
       const { error } = await supabase
         .from('tracks')
@@ -55,6 +79,7 @@ export const SupabaseStorageService = {
           location: track.location,
           created_at: new Date(track.createdAt).toISOString(),
           updated_at: new Date().toISOString(),
+          user_profile_id: userId,
         });
 
       if (error) {
@@ -100,10 +125,19 @@ export const SupabaseStorageService = {
     }
 
     try {
-      const { data, error } = await supabase
+      const userId = await getCurrentUserId();
+      
+      let query = supabase
         .from('readings')
         .select('*')
         .order('timestamp', { ascending: false });
+
+      // Filter by user if we have a current user
+      if (userId) {
+        query = query.eq('user_profile_id', userId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching readings from Supabase:', error);
@@ -133,11 +167,20 @@ export const SupabaseStorageService = {
     }
 
     try {
-      const { data, error } = await supabase
+      const userId = await getCurrentUserId();
+      
+      let query = supabase
         .from('readings')
         .select('*')
         .eq('track_id', trackId)
         .order('timestamp', { ascending: false });
+
+      // Filter by user if we have a current user
+      if (userId) {
+        query = query.eq('user_profile_id', userId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching readings by track from Supabase:', error);
@@ -167,12 +210,21 @@ export const SupabaseStorageService = {
     }
 
     try {
-      const { data, error } = await supabase
+      const userId = await getCurrentUserId();
+      
+      let query = supabase
         .from('readings')
         .select('*')
         .eq('track_id', trackId)
         .eq('year', year)
         .order('timestamp', { ascending: false });
+
+      // Filter by user if we have a current user
+      if (userId) {
+        query = query.eq('user_profile_id', userId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching readings by track and year from Supabase:', error);
@@ -202,10 +254,19 @@ export const SupabaseStorageService = {
     }
 
     try {
-      const { data, error } = await supabase
+      const userId = await getCurrentUserId();
+      
+      let query = supabase
         .from('readings')
         .select('year')
         .order('year', { ascending: false });
+
+      // Filter by user if we have a current user
+      if (userId) {
+        query = query.eq('user_profile_id', userId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching available years from Supabase:', error);
@@ -231,11 +292,20 @@ export const SupabaseStorageService = {
     }
 
     try {
-      const { data, error } = await supabase
+      const userId = await getCurrentUserId();
+      
+      let query = supabase
         .from('readings')
         .select('year')
         .eq('track_id', trackId)
         .order('year', { ascending: false });
+
+      // Filter by user if we have a current user
+      if (userId) {
+        query = query.eq('user_profile_id', userId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching available years for track from Supabase:', error);
@@ -261,10 +331,7 @@ export const SupabaseStorageService = {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
+      const userId = await getCurrentUserId();
 
       const { error } = await supabase
         .from('readings')
@@ -279,6 +346,7 @@ export const SupabaseStorageService = {
           left_lane: reading.leftLane,
           right_lane: reading.rightLane,
           updated_at: new Date().toISOString(),
+          user_profile_id: userId,
         });
 
       if (error) {
@@ -325,6 +393,7 @@ export const SupabaseStorageService = {
 
     try {
       console.log('Starting sync from local to Supabase...');
+      const userId = await getCurrentUserId();
 
       // Sync tracks
       const localTracks = await StorageService.getTracks();
