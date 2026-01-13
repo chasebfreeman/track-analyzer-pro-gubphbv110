@@ -17,6 +17,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { WidgetProvider } from "@/contexts/WidgetContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { SupabaseAuthProvider } from "@/contexts/SupabaseAuthContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -140,7 +141,9 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <SupabaseAuthProvider>
+        <RootLayoutNav />
+      </SupabaseAuthProvider>
     </AuthProvider>
   );
 }
