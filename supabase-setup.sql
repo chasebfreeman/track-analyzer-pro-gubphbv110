@@ -146,16 +146,11 @@ CREATE POLICY "Team members can delete readings"
   );
 
 -- RLS Policies for team_members
--- Users can view all team members
+-- FIXED: Users can view all team members if they are authenticated (no circular dependency)
 CREATE POLICY "Team members can view team"
   ON public.team_members FOR SELECT
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.team_members tm
-      WHERE tm.user_id = auth.uid()
-    )
-  );
+  USING (true);
 
 -- Only admins can add team members
 CREATE POLICY "Admins can add team members"

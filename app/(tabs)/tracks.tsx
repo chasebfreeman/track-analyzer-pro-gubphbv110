@@ -31,32 +31,32 @@ export default function TracksScreen() {
   const [newTrackLocation, setNewTrackLocation] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const loadTracks = async () => {
+  const loadTracks = useCallback(async () => {
     console.log('Loading all tracks from Supabase');
     const tracks = await SupabaseStorageService.getAllTracks();
     setAllTracks(tracks);
     console.log('Loaded tracks:', tracks.length);
-  };
+  }, []);
 
-  const loadAvailableYears = async () => {
+  const loadAvailableYears = useCallback(async () => {
     console.log('Loading available years');
     const years = await SupabaseStorageService.getAvailableYears();
     setAvailableYears(years);
     console.log('Available years:', years);
-  };
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       console.log('Tracks screen focused, loading data');
       loadTracks();
       loadAvailableYears();
-    }, [])
+    }, [loadTracks, loadAvailableYears])
   );
 
   useEffect(() => {
     loadTracks();
     loadAvailableYears();
-  }, []);
+  }, [loadTracks, loadAvailableYears]);
 
   useEffect(() => {
     console.log('Filtering tracks by year:', selectedYear);

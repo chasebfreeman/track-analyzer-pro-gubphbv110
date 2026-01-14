@@ -89,7 +89,7 @@ export default function BrowseScreen() {
   useEffect(() => {
     loadTracks();
     loadAvailableYears();
-  }, []);
+  }, [loadTracks, loadAvailableYears]);
 
   useEffect(() => {
     if (selectedTrack) {

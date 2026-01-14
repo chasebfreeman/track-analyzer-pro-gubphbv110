@@ -40,7 +40,7 @@ This will create:
 - **tracks** table for storing race tracks
 - **readings** table for storing track readings
 - **team_members** table for managing team access
-- Row Level Security (RLS) policies for team collaboration
+- Row Level Security (RLS) policies for team collaboration (FIXED: no infinite recursion)
 - Indexes for optimal performance
 - Real-time syncing capabilities
 
@@ -103,6 +103,11 @@ All team members can:
 - Check your email and password
 - Verify email confirmation (check spam folder)
 - Try password reset if needed
+
+### "Infinite Recursion" Error (FIXED)
+- This was caused by circular RLS policy dependencies
+- The updated `supabase-setup.sql` fixes this issue
+- Re-run the SQL setup script if you encounter this error
 
 ### Data Not Syncing
 - Check your internet connection
