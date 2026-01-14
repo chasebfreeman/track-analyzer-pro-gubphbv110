@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "Track Analyzer Pro",
@@ -9,7 +10,8 @@
     "newArchEnabled": true,
     "platforms": [
       "ios",
-      "android"
+      "android",
+      "web"
     ],
     "splash": {
       "image": "./assets/images/natively-dark.png",
@@ -47,6 +49,5 @@
     "extra": {
       "router": {}
     }
-  },
-  "scheme": "Track Analyzer Pro"
+  }
 }
