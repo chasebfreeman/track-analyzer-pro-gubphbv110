@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,193 +9,290 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   ActivityIndicator,
-} from "react-native";
-import { useRouter } from "expo-router";
-import { useAuth } from "@/contexts/AuthContext";
-import { SafeAreaView } from "react-native-safe-area-context";
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
+import { useThemeColors } from '@/styles/commonStyles';
+import { IconSymbol } from '@/components/IconSymbol';
+import { supabase } from '@/utils/supabase';
 
 export default function SignupScreen() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { signUpWithEmail } = useAuth();
+  const colors = useThemeColors();
   const router = useRouter();
+  const { signUpWithEmail } = useSupabaseAuth();
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignup = async () => {
-    if (!name || !email || !password || !confirmPassword) {
-      Alert.alert("Error", "Please fill in all fields");
+  const handleSignUp = async () => {
+    console.log('User tapped Sign Up button');
+    
+    if (!email || !password || !confirmPassword) {
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
+      Alert.alert('Error', 'Passwords do not match');
       return;
     }
 
-    if (password.length < 8) {
-      Alert.alert("Error", "Password must be at least 8 characters");
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
       return;
     }
 
-    setLoading(true);
-    try {
-      await signUpWithEmail(email, password, name);
+    setIsLoading(true);
+    console.log('Attempting signup with email:', email);
+
+    const result = await signUpWithEmail(email, password);
+
+    if (result.success) {
+      console.log('Signup successful');
+      
+      // Add user to team_members table
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData.user) {
+          console.log('Adding user to team_members table');
+          await supabase.from('team_members').insert({
+            user_id: userData.user.id,
+            email: email,
+            role: 'member',
+          });
+        }
+      } catch (error) {
+        console.error('Error adding to team_members:', error);
+      }
+
+      setIsLoading(false);
       Alert.alert(
-        "Success",
-        "Account created successfully! You can now sign in.",
+        'Success',
+        'Account created successfully! You can now log in.',
         [
           {
-            text: "OK",
-            onPress: () => router.replace("/auth/login"),
+            text: 'OK',
+            onPress: () => {
+              console.log('Navigating to login screen');
+              router.back();
+            },
           },
         ]
       );
-    } catch (error: any) {
-      Alert.alert("Signup Failed", error.message || "Could not create account");
-    } finally {
-      setLoading(false);
+    } else {
+      setIsLoading(false);
+      console.log('Signup failed:', result.error);
+      Alert.alert('Signup Failed', result.error || 'An error occurred');
     }
   };
 
+  const handleBack = () => {
+    console.log('User tapped Back button');
+    router.back();
+  };
+
+  const styles = getStyles(colors);
+
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.content}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <IconSymbol
+            ios_icon_name="chevron.left"
+            android_material_icon_name="arrow-back"
+            size={24}
+            color={colors.text}
+          />
+        </TouchableOpacity>
+
+        <View style={styles.header}>
+          <IconSymbol
+            ios_icon_name="person.badge.plus"
+            android_material_icon_name="person-add"
+            size={64}
+            color={colors.primary}
+          />
           <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join your team</Text>
+          <Text style={styles.subtitle}>Join your team to start recording</Text>
+        </View>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Full Name"
-            placeholderTextColor="#999"
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-            autoComplete="name"
-          />
+        <View style={styles.form}>
+          <View style={styles.inputContainer}>
+            <IconSymbol
+              ios_icon_name="envelope"
+              android_material_icon_name="email"
+              size={20}
+              color={colors.textSecondary}
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor={colors.textSecondary}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoComplete="email"
+              editable={!isLoading}
+            />
+          </View>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#999"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoComplete="email"
-          />
+          <View style={styles.inputContainer}>
+            <IconSymbol
+              ios_icon_name="lock"
+              android_material_icon_name="lock"
+              size={20}
+              color={colors.textSecondary}
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Password (min 6 characters)"
+              placeholderTextColor={colors.textSecondary}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoComplete="password"
+              editable={!isLoading}
+            />
+          </View>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Password (min 8 characters)"
-            placeholderTextColor="#999"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoComplete="password-new"
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Confirm Password"
-            placeholderTextColor="#999"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-            autoComplete="password-new"
-          />
+          <View style={styles.inputContainer}>
+            <IconSymbol
+              ios_icon_name="lock.fill"
+              android_material_icon_name="lock"
+              size={20}
+              color={colors.textSecondary}
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm Password"
+              placeholderTextColor={colors.textSecondary}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoComplete="password"
+              editable={!isLoading}
+            />
+          </View>
 
           <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleSignup}
-            disabled={loading}
+            style={[styles.signupButton, isLoading && styles.buttonDisabled]}
+            onPress={handleSignUp}
+            disabled={isLoading}
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
+            {isLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.buttonText}>Create Account</Text>
+              <Text style={styles.signupButtonText}>Create Account</Text>
             )}
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.linkButton}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.linkText}>
-              Already have an account? <Text style={styles.linkTextBold}>Sign In</Text>
-            </Text>
-          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            By creating an account, you'll be able to view and create readings for all tracks in your team.
+          </Text>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000",
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 24,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#999",
-    marginBottom: 40,
-    textAlign: "center",
-  },
-  input: {
-    backgroundColor: "#1c1c1e",
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: "#fff",
-    marginBottom: 16,
-  },
-  button: {
-    backgroundColor: "#007AFF",
-    borderRadius: 12,
-    padding: 16,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  linkButton: {
-    marginTop: 24,
-    alignItems: "center",
-  },
-  linkText: {
-    color: "#999",
-    fontSize: 14,
-  },
-  linkTextBold: {
-    color: "#007AFF",
-    fontWeight: "600",
-  },
-});
+function getStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      padding: 24,
+      paddingTop: Platform.OS === 'android' ? 48 : 24,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+    header: {
+      alignItems: 'center',
+      marginBottom: 48,
+    },
+    title: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginTop: 16,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      marginTop: 8,
+      textAlign: 'center',
+    },
+    form: {
+      width: '100%',
+    },
+    inputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      marginBottom: 16,
+      paddingHorizontal: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    inputIcon: {
+      marginRight: 12,
+    },
+    input: {
+      flex: 1,
+      height: 56,
+      fontSize: 16,
+      color: colors.text,
+    },
+    signupButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 12,
+      height: 56,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    buttonDisabled: {
+      opacity: 0.6,
+    },
+    signupButtonText: {
+      color: '#FFFFFF',
+      fontSize: 18,
+      fontWeight: '600',
+    },
+    footer: {
+      marginTop: 32,
+      alignItems: 'center',
+    },
+    footerText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+  });
+}

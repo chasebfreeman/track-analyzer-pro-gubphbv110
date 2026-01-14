@@ -1,5 +1,5 @@
 
-import React, { useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,209 +12,154 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useThemeColors } from '@/styles/commonStyles';
-import { SupabaseStorageService } from '@/utils/supabaseStorage';
-import { TrackReading, Track } from '@/types/TrackData';
 import { IconSymbol } from '@/components/IconSymbol';
+import { TrackReading, Track } from '@/types/TrackData';
+import { SupabaseStorageService } from '@/utils/supabaseStorage';
 
 export default function ReadingDetailScreen() {
+  const colors = useThemeColors();
   const params = useLocalSearchParams();
   const router = useRouter();
-  const colors = useThemeColors();
-  const [reading, setReading] = React.useState<TrackReading | null>(null);
-  const [track, setTrack] = React.useState<Track | null>(null);
+  
+  const [reading, setReading] = useState<TrackReading | null>(null);
+  const [track, setTrack] = useState<Track | null>(null);
 
-  const loadReading = useCallback(async () => {
-    try {
-      const readings = await SupabaseStorageService.getReadings();
-      const foundReading = readings.find((r) => r.id === params.readingId);
-      if (foundReading) {
-        setReading(foundReading);
-        
-        // Load the track information
-        const tracks = await SupabaseStorageService.getTracks();
-        const foundTrack = tracks.find((t) => t.id === foundReading.trackId);
-        if (foundTrack) {
-          setTrack(foundTrack);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading reading:', error);
-    }
-  }, [params.readingId]);
-
-  React.useEffect(() => {
-    loadReading();
-  }, [loadReading]);
-
-  const handleEdit = () => {
-    if (!reading) return;
-
-    console.log('Navigating to edit reading:', reading.id);
+  const loadData = useCallback(async () => {
+    console.log('Loading reading detail:', params.readingId);
     
-    // Navigate to record screen with reading data
-    router.push({
-      pathname: '/(tabs)/record',
-      params: {
-        editMode: 'true',
-        readingId: reading.id,
-        trackId: reading.trackId,
-        year: reading.year.toString(),
-        classCurrentlyRunning: reading.classCurrentlyRunning || '',
-        // Left lane data
-        leftLaneTrackTemp: reading.leftLane.trackTemp,
-        leftLaneUvIndex: reading.leftLane.uvIndex,
-        leftLaneKegSL: reading.leftLane.kegSL,
-        leftLaneKegOut: reading.leftLane.kegOut,
-        leftLaneGrippoSL: reading.leftLane.grippoSL,
-        leftLaneGrippoOut: reading.leftLane.grippoOut,
-        leftLaneShine: reading.leftLane.shine,
-        leftLaneNotes: reading.leftLane.notes,
-        leftLaneImageUri: reading.leftLane.imageUri || '',
-        // Right lane data
-        rightLaneTrackTemp: reading.rightLane.trackTemp,
-        rightLaneUvIndex: reading.rightLane.uvIndex,
-        rightLaneKegSL: reading.rightLane.kegSL,
-        rightLaneKegOut: reading.rightLane.kegOut,
-        rightLaneGrippoSL: reading.rightLane.grippoSL,
-        rightLaneGrippoOut: reading.rightLane.grippoOut,
-        rightLaneShine: reading.rightLane.shine,
-        rightLaneNotes: reading.rightLane.notes,
-        rightLaneImageUri: reading.rightLane.imageUri || '',
-      },
-    });
-  };
+    if (!params.readingId || !params.trackId) {
+      console.log('Missing readingId or trackId');
+      return;
+    }
+
+    // Load track
+    const tracks = await SupabaseStorageService.getAllTracks();
+    const foundTrack = tracks.find((t) => t.id === params.trackId);
+    if (foundTrack) {
+      setTrack(foundTrack);
+    }
+
+    // Load readings for this track
+    const readings = await SupabaseStorageService.getReadingsForTrack(
+      params.trackId as string
+    );
+    const foundReading = readings.find((r) => r.id === params.readingId);
+    if (foundReading) {
+      setReading(foundReading);
+      console.log('Reading loaded:', foundReading.id);
+    }
+  }, [params.readingId, params.trackId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleDelete = () => {
-    if (!reading) return;
-
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm(
-        `Are you sure you want to delete the reading from ${reading.date} at ${reading.time}?`
-      );
-      if (confirmed) {
-        deleteReading();
-      }
-    } else {
-      Alert.alert(
-        'Delete Reading',
-        `Are you sure you want to delete the reading from ${reading.date} at ${reading.time}?`,
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: deleteReading,
-          },
-        ]
-      );
-    }
+    console.log('User tapped Delete button');
+    Alert.alert(
+      'Delete Reading',
+      'Are you sure you want to delete this reading? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: deleteReading,
+        },
+      ]
+    );
   };
 
   const deleteReading = async () => {
+    console.log('Deleting reading:', reading?.id);
     if (!reading) return;
 
-    try {
-      await SupabaseStorageService.deleteReading(reading.id);
-      router.back();
-    } catch (error) {
-      console.error('Error deleting reading:', error);
-      if (Platform.OS === 'web') {
-        window.alert('Failed to delete reading. Please try again.');
-      } else {
-        Alert.alert('Error', 'Failed to delete reading. Please try again.');
-      }
+    const success = await SupabaseStorageService.deleteReading(reading.id);
+
+    if (success) {
+      console.log('Reading deleted successfully');
+      Alert.alert('Success', 'Reading deleted successfully', [
+        {
+          text: 'OK',
+          onPress: () => router.back(),
+        },
+      ]);
+    } else {
+      Alert.alert('Error', 'Failed to delete reading');
     }
   };
 
   const renderLaneData = (lane: any, title: string) => {
-    const styles = getStyles(colors);
-    
     return (
       <View style={styles.laneSection}>
         <Text style={styles.laneTitle}>{title}</Text>
+        
         <View style={styles.dataGrid}>
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Track Temp:</Text>
-            <Text style={styles.dataValue}>
-              {lane.trackTemp || 'N/A'}°F
-            </Text>
+          <View style={styles.dataItem}>
+            <Text style={styles.dataLabel}>Track Temp</Text>
+            <Text style={styles.dataValue}>{lane.trackTemp || 'N/A'}</Text>
           </View>
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>UV Index:</Text>
-            <Text style={styles.dataValue}>
-              {lane.uvIndex || 'N/A'}
-            </Text>
+          
+          <View style={styles.dataItem}>
+            <Text style={styles.dataLabel}>UV Index</Text>
+            <Text style={styles.dataValue}>{lane.uvIndex || 'N/A'}</Text>
           </View>
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Keg SL:</Text>
-            <Text style={styles.dataValue}>
-              {lane.kegSL || 'N/A'}
-            </Text>
+          
+          <View style={styles.dataItem}>
+            <Text style={styles.dataLabel}>Keg SL</Text>
+            <Text style={styles.dataValue}>{lane.kegSL || 'N/A'}</Text>
           </View>
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Keg Out:</Text>
-            <Text style={styles.dataValue}>
-              {lane.kegOut || 'N/A'}
-            </Text>
+          
+          <View style={styles.dataItem}>
+            <Text style={styles.dataLabel}>Keg Out</Text>
+            <Text style={styles.dataValue}>{lane.kegOut || 'N/A'}</Text>
           </View>
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Grippo SL:</Text>
-            <Text style={styles.dataValue}>
-              {lane.grippoSL || 'N/A'}
-            </Text>
+          
+          <View style={styles.dataItem}>
+            <Text style={styles.dataLabel}>Grippo SL</Text>
+            <Text style={styles.dataValue}>{lane.grippoSL || 'N/A'}</Text>
           </View>
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Grippo Out:</Text>
-            <Text style={styles.dataValue}>
-              {lane.grippoOut || 'N/A'}
-            </Text>
+          
+          <View style={styles.dataItem}>
+            <Text style={styles.dataLabel}>Grippo Out</Text>
+            <Text style={styles.dataValue}>{lane.grippoOut || 'N/A'}</Text>
           </View>
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Shine:</Text>
-            <Text style={styles.dataValue}>
-              {lane.shine || 'N/A'}
-            </Text>
+          
+          <View style={styles.dataItem}>
+            <Text style={styles.dataLabel}>Shine</Text>
+            <Text style={styles.dataValue}>{lane.shine || 'N/A'}</Text>
           </View>
-          {lane.notes && (
-            <View style={styles.notesRow}>
-              <Text style={styles.dataLabel}>Notes:</Text>
-              <Text style={styles.notesValue}>
-                {lane.notes}
-              </Text>
-            </View>
-          )}
-          {lane.imageUri && (
-            <Image source={{ uri: lane.imageUri }} style={styles.laneImage} />
-          )}
         </View>
+
+        {lane.notes && (
+          <View style={styles.notesSection}>
+            <Text style={styles.dataLabel}>Notes</Text>
+            <Text style={styles.notesText}>{lane.notes}</Text>
+          </View>
+        )}
+
+        {lane.imageUri && (
+          <Image source={{ uri: lane.imageUri }} style={styles.laneImage} />
+        )}
       </View>
     );
   };
 
   const styles = getStyles(colors);
 
-  if (!reading) {
+  if (!reading || !track) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <IconSymbol
               ios_icon_name="chevron.left"
-              android_material_icon_name="arrow_back"
+              android_material_icon_name="arrow-back"
               size={24}
-              color={colors.primary}
+              color={colors.text}
             />
-            <Text style={styles.backButtonText}>Back</Text>
           </TouchableOpacity>
-        </View>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading...</Text>
+          <Text style={styles.headerTitle}>Loading...</Text>
         </View>
       </View>
     );
@@ -223,79 +168,57 @@ export default function ReadingDetailScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <IconSymbol
             ios_icon_name="chevron.left"
-            android_material_icon_name="arrow_back"
+            android_material_icon_name="arrow-back"
             size={24}
-            color={colors.primary}
+            color={colors.text}
           />
-          <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={handleEdit}
-          >
-            <IconSymbol
-              ios_icon_name="pencil"
-              android_material_icon_name="edit"
-              size={24}
-              color={colors.primary}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={handleDelete}
-          >
-            <IconSymbol
-              ios_icon_name="trash"
-              android_material_icon_name="delete"
-              size={24}
-              color="#ff3b30"
-            />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.headerTitle}>Reading Details</Text>
+        <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
+          <IconSymbol
+            ios_icon_name="trash"
+            android_material_icon_name="delete"
+            size={24}
+            color="#FF3B30"
+          />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.headerInfo}>
-          <Text style={styles.title}>{track ? track.name : 'Reading Details'}</Text>
-          <View style={styles.dateTimeContainer}>
-            <View style={styles.dateTimeRow}>
-              <IconSymbol
-                ios_icon_name="calendar"
-                android_material_icon_name="calendar_today"
-                size={20}
-                color={colors.primary}
-              />
-              <Text style={styles.dateTimeText}>{reading.date}</Text>
-            </View>
-            <View style={styles.dateTimeRow}>
-              <IconSymbol
-                ios_icon_name="clock"
-                android_material_icon_name="access_time"
-                size={20}
-                color={colors.primary}
-              />
-              <Text style={styles.dateTimeText}>{reading.time}</Text>
-            </View>
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+        <View style={styles.infoCard}>
+          <View style={styles.infoRow}>
+            <IconSymbol
+              ios_icon_name="flag.checkered"
+              android_material_icon_name="sports-score"
+              size={20}
+              color={colors.primary}
+            />
+            <Text style={styles.infoText}>{track.name}</Text>
+          </View>
+          
+          <View style={styles.infoRow}>
+            <IconSymbol
+              ios_icon_name="calendar"
+              android_material_icon_name="calendar-today"
+              size={20}
+              color={colors.primary}
+            />
+            <Text style={styles.infoText}>{reading.date}</Text>
+          </View>
+          
+          <View style={styles.infoRow}>
+            <IconSymbol
+              ios_icon_name="clock"
+              android_material_icon_name="access-time"
+              size={20}
+              color={colors.primary}
+            />
+            <Text style={styles.infoText}>{reading.time}</Text>
           </View>
         </View>
-
-        {reading.classCurrentlyRunning && (
-          <View style={styles.classSection}>
-            <Text style={styles.classSectionTitle}>Class Currently Running</Text>
-            <Text style={styles.classValue}>{reading.classCurrentlyRunning}</Text>
-          </View>
-        )}
 
         {renderLaneData(reading.leftLane, 'Left Lane')}
         {renderLaneData(reading.rightLane, 'Right Lane')}
@@ -309,143 +232,102 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
     container: {
       flex: 1,
       backgroundColor: colors.background,
+      paddingTop: Platform.OS === 'android' ? 48 : 0,
     },
     header: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
       alignItems: 'center',
-      paddingTop: Platform.OS === 'android' ? 48 : 60,
-      paddingHorizontal: 16,
-      paddingBottom: 12,
-      backgroundColor: colors.background,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
     },
     backButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      marginRight: 8,
     },
-    backButtonText: {
-      fontSize: 17,
-      color: colors.primary,
+    headerTitle: {
+      flex: 1,
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.text,
     },
-    headerActions: {
+    deleteButton: {
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      alignItems: 'flex-end',
+    },
+    content: {
+      flex: 1,
+    },
+    contentContainer: {
+      padding: 20,
+    },
+    infoCard: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+      gap: 12,
+    },
+    infoRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
     },
-    editButton: {
-      padding: 8,
-    },
-    deleteButton: {
-      padding: 8,
-    },
-    scrollView: {
-      flex: 1,
-    },
-    scrollContent: {
-      paddingHorizontal: 16,
-      paddingTop: 20,
-      paddingBottom: 120,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    loadingText: {
+    infoText: {
       fontSize: 16,
-      color: colors.textSecondary,
-    },
-    headerInfo: {
-      marginBottom: 24,
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: '700',
-      marginBottom: 12,
-      color: colors.text,
-    },
-    dateTimeContainer: {
-      flexDirection: 'row',
-      gap: 20,
-    },
-    dateTimeRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    dateTimeText: {
-      fontSize: 16,
-      color: colors.text,
-    },
-    classSection: {
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 20,
-      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-      elevation: 2,
-    },
-    classSectionTitle: {
-      fontSize: 15,
-      fontWeight: '500',
-      color: colors.textSecondary,
-      marginBottom: 8,
-    },
-    classValue: {
-      fontSize: 18,
-      fontWeight: '600',
       color: colors.text,
     },
     laneSection: {
       backgroundColor: colors.card,
       borderRadius: 12,
       padding: 16,
-      marginBottom: 20,
-      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-      elevation: 2,
+      marginBottom: 16,
     },
     laneTitle: {
       fontSize: 20,
       fontWeight: '600',
+      color: colors.text,
       marginBottom: 16,
-      color: colors.primary,
     },
     dataGrid: {
-      gap: 12,
-    },
-    dataRow: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: 16,
+    },
+    dataItem: {
+      width: '45%',
     },
     dataLabel: {
-      fontSize: 15,
-      fontWeight: '500',
+      fontSize: 12,
       color: colors.textSecondary,
+      marginBottom: 4,
+      fontWeight: '500',
     },
     dataValue: {
-      fontSize: 15,
+      fontSize: 18,
+      color: colors.text,
       fontWeight: '600',
-      color: colors.text,
     },
-    notesRow: {
-      marginTop: 8,
+    notesSection: {
+      marginTop: 16,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
     },
-    notesValue: {
-      fontSize: 15,
-      marginTop: 6,
-      lineHeight: 22,
+    notesText: {
+      fontSize: 14,
       color: colors.text,
+      lineHeight: 20,
+      marginTop: 4,
     },
     laneImage: {
       width: '100%',
       height: 200,
       borderRadius: 8,
-      marginTop: 12,
-      resizeMode: 'cover',
+      marginTop: 16,
     },
   });
 }

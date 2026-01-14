@@ -1,150 +1,152 @@
 
 import { supabase, isSupabaseConfigured } from './supabase';
-import { Track, TrackReading } from '@/types/TrackData';
-import { StorageService } from './storage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Track, TrackReading, LaneReading } from '@/types/TrackData';
 
-const CURRENT_USER_KEY = 'current_user';
+export class SupabaseStorageService {
+  // ============================================
+  // TRACKS
+  // ============================================
 
-// Get current user ID from AsyncStorage
-async function getCurrentUserId(): Promise<string | null> {
-  try {
-    const userJson = await AsyncStorage.getItem(CURRENT_USER_KEY);
-    if (userJson) {
-      const user = JSON.parse(userJson);
-      return user.id;
-    }
-    return null;
-  } catch (error) {
-    console.error('Error getting current user ID:', error);
-    return null;
-  }
-}
-
-export const SupabaseStorageService = {
-  // Check if we should use Supabase or fall back to local storage
-  isEnabled: () => isSupabaseConfigured(),
-
-  // Track operations
-  async getTracks(): Promise<Track[]> {
-    if (!this.isEnabled()) {
-      return StorageService.getTracks();
+  static async getAllTracks(): Promise<Track[]> {
+    console.log('SupabaseStorageService: Fetching all tracks');
+    
+    if (!isSupabaseConfigured()) {
+      console.log('Supabase not configured');
+      return [];
     }
 
     try {
-      const userId = await getCurrentUserId();
-      
-      let query = supabase
+      const { data, error } = await supabase
         .from('tracks')
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Filter by user if we have a current user
-      if (userId) {
-        query = query.eq('user_profile_id', userId);
-      }
-
-      const { data, error } = await query;
-
       if (error) {
-        console.error('Error fetching tracks from Supabase:', error);
-        return StorageService.getTracks();
+        console.error('Error fetching tracks:', error);
+        return [];
       }
 
-      return data.map(track => ({
+      console.log('Fetched tracks:', data?.length || 0);
+
+      return (data || []).map((track: any) => ({
         id: track.id,
         name: track.name,
         location: track.location,
         createdAt: new Date(track.created_at).getTime(),
       }));
     } catch (error) {
-      console.error('Error getting tracks:', error);
-      return StorageService.getTracks();
+      console.error('Exception fetching tracks:', error);
+      return [];
     }
-  },
+  }
 
-  async saveTrack(track: Track): Promise<void> {
-    if (!this.isEnabled()) {
-      return StorageService.saveTrack(track);
+  static async createTrack(name: string, location: string): Promise<Track | null> {
+    console.log('SupabaseStorageService: Creating track:', name, location);
+    
+    if (!isSupabaseConfigured()) {
+      console.log('Supabase not configured');
+      return null;
     }
 
     try {
-      const userId = await getCurrentUserId();
-
-      const { error } = await supabase
+      const { data: userData } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
         .from('tracks')
-        .upsert({
-          id: track.id,
-          name: track.name,
-          location: track.location,
-          created_at: new Date(track.createdAt).toISOString(),
-          updated_at: new Date().toISOString(),
-          user_profile_id: userId,
-        });
+        .insert({
+          name,
+          location,
+          user_id: userData.user?.id,
+        })
+        .select()
+        .single();
 
       if (error) {
-        console.error('Error saving track to Supabase:', error);
-        throw error;
+        console.error('Error creating track:', error);
+        return null;
       }
 
-      console.log('Track saved to Supabase successfully:', track.name);
-    } catch (error) {
-      console.error('Error saving track:', error);
-      throw error;
-    }
-  },
+      console.log('Track created successfully:', data.id);
 
-  async deleteTrack(trackId: string): Promise<void> {
-    if (!this.isEnabled()) {
-      return StorageService.deleteTrack(trackId);
+      return {
+        id: data.id,
+        name: data.name,
+        location: data.location,
+        createdAt: new Date(data.created_at).getTime(),
+      };
+    } catch (error) {
+      console.error('Exception creating track:', error);
+      return null;
+    }
+  }
+
+  static async deleteTrack(trackId: string): Promise<boolean> {
+    console.log('SupabaseStorageService: Deleting track:', trackId);
+    
+    if (!isSupabaseConfigured()) {
+      console.log('Supabase not configured');
+      return false;
     }
 
     try {
-      // Delete track (readings will be cascade deleted)
+      // First delete all readings for this track
+      await supabase
+        .from('readings')
+        .delete()
+        .eq('track_id', trackId);
+
+      // Then delete the track
       const { error } = await supabase
         .from('tracks')
         .delete()
         .eq('id', trackId);
 
       if (error) {
-        console.error('Error deleting track from Supabase:', error);
-        throw error;
+        console.error('Error deleting track:', error);
+        return false;
       }
 
-      console.log('Track deleted from Supabase successfully:', trackId);
+      console.log('Track deleted successfully');
+      return true;
     } catch (error) {
-      console.error('Error deleting track:', error);
-      throw error;
+      console.error('Exception deleting track:', error);
+      return false;
     }
-  },
+  }
 
-  // Reading operations
-  async getReadings(): Promise<TrackReading[]> {
-    if (!this.isEnabled()) {
-      return StorageService.getReadings();
+  // ============================================
+  // READINGS
+  // ============================================
+
+  static async getReadingsForTrack(trackId: string, year?: number): Promise<TrackReading[]> {
+    console.log('SupabaseStorageService: Fetching readings for track:', trackId, 'year:', year);
+    
+    if (!isSupabaseConfigured()) {
+      console.log('Supabase not configured');
+      return [];
     }
 
     try {
-      const userId = await getCurrentUserId();
-      
       let query = supabase
         .from('readings')
         .select('*')
+        .eq('track_id', trackId)
         .order('timestamp', { ascending: false });
 
-      // Filter by user if we have a current user
-      if (userId) {
-        query = query.eq('user_profile_id', userId);
+      if (year) {
+        query = query.eq('year', year);
       }
 
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching readings from Supabase:', error);
-        return StorageService.getReadings();
+        console.error('Error fetching readings:', error);
+        return [];
       }
 
-      return data.map(reading => ({
+      console.log('Fetched readings:', data?.length || 0);
+
+      return (data || []).map((reading: any) => ({
         id: reading.id,
         trackId: reading.track_id,
         date: reading.date,
@@ -152,191 +154,29 @@ export const SupabaseStorageService = {
         timestamp: reading.timestamp,
         year: reading.year,
         classCurrentlyRunning: reading.class_currently_running,
-        leftLane: reading.left_lane,
-        rightLane: reading.right_lane,
+        leftLane: reading.left_lane as LaneReading,
+        rightLane: reading.right_lane as LaneReading,
       }));
     } catch (error) {
-      console.error('Error getting readings:', error);
-      return StorageService.getReadings();
+      console.error('Exception fetching readings:', error);
+      return [];
     }
-  },
+  }
 
-  async getReadingsByTrack(trackId: string): Promise<TrackReading[]> {
-    if (!this.isEnabled()) {
-      return StorageService.getReadingsByTrack(trackId);
-    }
-
-    try {
-      const userId = await getCurrentUserId();
-      
-      let query = supabase
-        .from('readings')
-        .select('*')
-        .eq('track_id', trackId)
-        .order('timestamp', { ascending: false });
-
-      // Filter by user if we have a current user
-      if (userId) {
-        query = query.eq('user_profile_id', userId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching readings by track from Supabase:', error);
-        return StorageService.getReadingsByTrack(trackId);
-      }
-
-      return data.map(reading => ({
-        id: reading.id,
-        trackId: reading.track_id,
-        date: reading.date,
-        time: reading.time,
-        timestamp: reading.timestamp,
-        year: reading.year,
-        classCurrentlyRunning: reading.class_currently_running,
-        leftLane: reading.left_lane,
-        rightLane: reading.right_lane,
-      }));
-    } catch (error) {
-      console.error('Error getting readings by track:', error);
-      return StorageService.getReadingsByTrack(trackId);
-    }
-  },
-
-  async getReadingsByTrackAndYear(trackId: string, year: number): Promise<TrackReading[]> {
-    if (!this.isEnabled()) {
-      return StorageService.getReadingsByTrackAndYear(trackId, year);
+  static async createReading(reading: Omit<TrackReading, 'id'>): Promise<TrackReading | null> {
+    console.log('SupabaseStorageService: Creating reading for track:', reading.trackId);
+    
+    if (!isSupabaseConfigured()) {
+      console.log('Supabase not configured');
+      return null;
     }
 
     try {
-      const userId = await getCurrentUserId();
-      
-      let query = supabase
+      const { data: userData } = await supabase.auth.getUser();
+
+      const { data, error } = await supabase
         .from('readings')
-        .select('*')
-        .eq('track_id', trackId)
-        .eq('year', year)
-        .order('timestamp', { ascending: false });
-
-      // Filter by user if we have a current user
-      if (userId) {
-        query = query.eq('user_profile_id', userId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching readings by track and year from Supabase:', error);
-        return StorageService.getReadingsByTrackAndYear(trackId, year);
-      }
-
-      return data.map(reading => ({
-        id: reading.id,
-        trackId: reading.track_id,
-        date: reading.date,
-        time: reading.time,
-        timestamp: reading.timestamp,
-        year: reading.year,
-        classCurrentlyRunning: reading.class_currently_running,
-        leftLane: reading.left_lane,
-        rightLane: reading.right_lane,
-      }));
-    } catch (error) {
-      console.error('Error getting readings by track and year:', error);
-      return StorageService.getReadingsByTrackAndYear(trackId, year);
-    }
-  },
-
-  async getAvailableYears(): Promise<number[]> {
-    if (!this.isEnabled()) {
-      return StorageService.getAvailableYears();
-    }
-
-    try {
-      const userId = await getCurrentUserId();
-      
-      let query = supabase
-        .from('readings')
-        .select('year')
-        .order('year', { ascending: false });
-
-      // Filter by user if we have a current user
-      if (userId) {
-        query = query.eq('user_profile_id', userId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching available years from Supabase:', error);
-        return StorageService.getAvailableYears();
-      }
-
-      const years = new Set<number>();
-      data.forEach(reading => {
-        if (reading.year) {
-          years.add(reading.year);
-        }
-      });
-      return Array.from(years).sort((a, b) => b - a);
-    } catch (error) {
-      console.error('Error getting available years:', error);
-      return StorageService.getAvailableYears();
-    }
-  },
-
-  async getAvailableYearsForTrack(trackId: string): Promise<number[]> {
-    if (!this.isEnabled()) {
-      return StorageService.getAvailableYearsForTrack(trackId);
-    }
-
-    try {
-      const userId = await getCurrentUserId();
-      
-      let query = supabase
-        .from('readings')
-        .select('year')
-        .eq('track_id', trackId)
-        .order('year', { ascending: false });
-
-      // Filter by user if we have a current user
-      if (userId) {
-        query = query.eq('user_profile_id', userId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching available years for track from Supabase:', error);
-        return StorageService.getAvailableYearsForTrack(trackId);
-      }
-
-      const years = new Set<number>();
-      data.forEach(reading => {
-        if (reading.year) {
-          years.add(reading.year);
-        }
-      });
-      return Array.from(years).sort((a, b) => b - a);
-    } catch (error) {
-      console.error('Error getting available years for track:', error);
-      return StorageService.getAvailableYearsForTrack(trackId);
-    }
-  },
-
-  async saveReading(reading: TrackReading): Promise<void> {
-    if (!this.isEnabled()) {
-      return StorageService.saveReading(reading);
-    }
-
-    try {
-      const userId = await getCurrentUserId();
-
-      const { error } = await supabase
-        .from('readings')
-        .upsert({
-          id: reading.id,
+        .insert({
           track_id: reading.trackId,
           date: reading.date,
           time: reading.time,
@@ -345,25 +185,80 @@ export const SupabaseStorageService = {
           class_currently_running: reading.classCurrentlyRunning,
           left_lane: reading.leftLane,
           right_lane: reading.rightLane,
-          updated_at: new Date().toISOString(),
-          user_profile_id: userId,
-        });
+          user_id: userData.user?.id,
+        })
+        .select()
+        .single();
 
       if (error) {
-        console.error('Error saving reading to Supabase:', error);
-        throw error;
+        console.error('Error creating reading:', error);
+        return null;
       }
 
-      console.log('Reading saved to Supabase successfully:', reading.id);
-    } catch (error) {
-      console.error('Error saving reading:', error);
-      throw error;
-    }
-  },
+      console.log('Reading created successfully:', data.id);
 
-  async deleteReading(readingId: string): Promise<void> {
-    if (!this.isEnabled()) {
-      return StorageService.deleteReading(readingId);
+      return {
+        id: data.id,
+        trackId: data.track_id,
+        date: data.date,
+        time: data.time,
+        timestamp: data.timestamp,
+        year: data.year,
+        classCurrentlyRunning: data.class_currently_running,
+        leftLane: data.left_lane as LaneReading,
+        rightLane: data.right_lane as LaneReading,
+      };
+    } catch (error) {
+      console.error('Exception creating reading:', error);
+      return null;
+    }
+  }
+
+  static async updateReading(readingId: string, updates: Partial<TrackReading>): Promise<boolean> {
+    console.log('SupabaseStorageService: Updating reading:', readingId);
+    
+    if (!isSupabaseConfigured()) {
+      console.log('Supabase not configured');
+      return false;
+    }
+
+    try {
+      const updateData: any = {};
+      
+      if (updates.date) updateData.date = updates.date;
+      if (updates.time) updateData.time = updates.time;
+      if (updates.timestamp) updateData.timestamp = updates.timestamp;
+      if (updates.year) updateData.year = updates.year;
+      if (updates.classCurrentlyRunning !== undefined) {
+        updateData.class_currently_running = updates.classCurrentlyRunning;
+      }
+      if (updates.leftLane) updateData.left_lane = updates.leftLane;
+      if (updates.rightLane) updateData.right_lane = updates.rightLane;
+
+      const { error } = await supabase
+        .from('readings')
+        .update(updateData)
+        .eq('id', readingId);
+
+      if (error) {
+        console.error('Error updating reading:', error);
+        return false;
+      }
+
+      console.log('Reading updated successfully');
+      return true;
+    } catch (error) {
+      console.error('Exception updating reading:', error);
+      return false;
+    }
+  }
+
+  static async deleteReading(readingId: string): Promise<boolean> {
+    console.log('SupabaseStorageService: Deleting reading:', readingId);
+    
+    if (!isSupabaseConfigured()) {
+      console.log('Supabase not configured');
+      return false;
     }
 
     try {
@@ -373,46 +268,76 @@ export const SupabaseStorageService = {
         .eq('id', readingId);
 
       if (error) {
-        console.error('Error deleting reading from Supabase:', error);
-        throw error;
+        console.error('Error deleting reading:', error);
+        return false;
       }
 
-      console.log('Reading deleted from Supabase successfully:', readingId);
+      console.log('Reading deleted successfully');
+      return true;
     } catch (error) {
-      console.error('Error deleting reading:', error);
-      throw error;
+      console.error('Exception deleting reading:', error);
+      return false;
     }
-  },
+  }
 
-  // Sync local data to Supabase (for migration)
-  async syncLocalToSupabase(): Promise<void> {
-    if (!this.isEnabled()) {
-      console.log('Supabase not configured, skipping sync');
-      return;
+  // ============================================
+  // UTILITY METHODS
+  // ============================================
+
+  static async getAvailableYears(trackId?: string): Promise<number[]> {
+    console.log('SupabaseStorageService: Fetching available years for track:', trackId);
+    
+    if (!isSupabaseConfigured()) {
+      console.log('Supabase not configured');
+      return [];
     }
 
     try {
-      console.log('Starting sync from local to Supabase...');
-      const userId = await getCurrentUserId();
+      let query = supabase
+        .from('readings')
+        .select('year');
 
-      // Sync tracks
-      const localTracks = await StorageService.getTracks();
-      for (const track of localTracks) {
-        await this.saveTrack(track);
+      if (trackId) {
+        query = query.eq('track_id', trackId);
       }
-      console.log(`Synced ${localTracks.length} tracks`);
 
-      // Sync readings
-      const localReadings = await StorageService.getReadings();
-      for (const reading of localReadings) {
-        await this.saveReading(reading);
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching years:', error);
+        return [];
       }
-      console.log(`Synced ${localReadings.length} readings`);
 
-      console.log('Sync completed successfully!');
+      const years = [...new Set((data || []).map((r: any) => r.year))].sort((a, b) => b - a);
+      console.log('Available years:', years);
+      return years;
     } catch (error) {
-      console.error('Error syncing local data to Supabase:', error);
-      throw error;
+      console.error('Exception fetching years:', error);
+      return [];
     }
-  },
-};
+  }
+
+  // ============================================
+  // IMAGE UPLOAD
+  // ============================================
+
+  static async uploadImage(uri: string, trackId: string, lane: 'left' | 'right'): Promise<string | null> {
+    console.log('SupabaseStorageService: Uploading image for track:', trackId, 'lane:', lane);
+    
+    if (!isSupabaseConfigured()) {
+      console.log('Supabase not configured');
+      return null;
+    }
+
+    try {
+      // For now, we'll store the local URI
+      // In a production app, you'd upload to Supabase Storage
+      // and return the public URL
+      console.log('Image stored locally:', uri);
+      return uri;
+    } catch (error) {
+      console.error('Exception uploading image:', error);
+      return null;
+    }
+  }
+}

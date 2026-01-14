@@ -13,207 +13,81 @@ import {
   Keyboard,
 } from 'react-native';
 import { useLocalSearchParams, useFocusEffect, useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import { useThemeColors } from '@/styles/commonStyles';
-import { SupabaseStorageService } from '@/utils/supabaseStorage';
-import { Track, TrackReading, LaneReading } from '@/types/TrackData';
 import { IconSymbol } from '@/components/IconSymbol';
+import { Track, LaneReading } from '@/types/TrackData';
+import { SupabaseStorageService } from '@/utils/supabaseStorage';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function RecordScreen() {
+  const colors = useThemeColors();
   const params = useLocalSearchParams();
   const router = useRouter();
-  const colors = useThemeColors();
+  
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
-  const [showTrackPicker, setShowTrackPicker] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [classCurrentlyRunning, setClassCurrentlyRunning] = useState('');
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [availableYears, setAvailableYears] = useState<number[]>([]);
-  const [showYearPicker, setShowYearPicker] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [editingReadingId, setEditingReadingId] = useState<string | null>(null);
+  const [leftLane, setLeftLane] = useState<LaneReading>(getEmptyLaneReading());
+  const [rightLane, setRightLane] = useState<LaneReading>(getEmptyLaneReading());
+  const [isSaving, setIsSaving] = useState(false);
 
-  const [leftLane, setLeftLane] = useState<LaneReading>({
-    trackTemp: '',
-    uvIndex: '',
-    kegSL: '',
-    kegOut: '',
-    grippoSL: '',
-    grippoOut: '',
-    shine: '',
-    notes: '',
-  });
-
-  const [rightLane, setRightLane] = useState<LaneReading>({
-    trackTemp: '',
-    uvIndex: '',
-    kegSL: '',
-    kegOut: '',
-    grippoSL: '',
-    grippoOut: '',
-    shine: '',
-    notes: '',
-  });
-
-  const loadAvailableYears = useCallback(async () => {
-    try {
-      const years = await SupabaseStorageService.getAvailableYears();
-      const currentYear = new Date().getFullYear();
-      
-      // Create a comprehensive list of years from 2024 to current year + 1
-      const allYears = new Set<number>();
-      
-      // Add years from data
-      years.forEach(year => allYears.add(year));
-      
-      // Always include 2024, 2025, current year, and next year
-      allYears.add(2024);
-      allYears.add(2025);
-      allYears.add(currentYear);
-      allYears.add(currentYear + 1);
-      
-      // Convert to sorted array (newest first)
-      const sortedYears = Array.from(allYears).sort((a, b) => b - a);
-      
-      console.log('Available years for record screen:', sortedYears);
-      setAvailableYears(sortedYears);
-    } catch (error) {
-      console.error('Error loading available years:', error);
-      // Fallback to basic years if there's an error
-      const currentYear = new Date().getFullYear();
-      setAvailableYears([currentYear + 1, currentYear, 2025, 2024].filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => b - a));
-    }
-  }, []);
-
-  // Load tracks on mount only
-  useEffect(() => {
-    console.log('RecordScreen mounted');
-    const loadInitialData = async () => {
-      setIsLoading(true);
-      console.log('Loading tracks in RecordScreen...');
-      try {
-        const loadedTracks = await SupabaseStorageService.getTracks();
-        console.log('Loaded tracks:', loadedTracks.length);
-        setTracks(loadedTracks.sort((a, b) => a.name.localeCompare(b.name)));
-      } catch (error) {
-        console.error('Error loading tracks:', error);
-      } finally {
-        setIsLoading(false);
-      }
+  function getEmptyLaneReading(): LaneReading {
+    return {
+      trackTemp: '',
+      uvIndex: '',
+      kegSL: '',
+      kegOut: '',
+      grippoSL: '',
+      grippoOut: '',
+      shine: '',
+      notes: '',
+      imageUri: undefined,
     };
+  }
 
-    loadInitialData();
-    loadAvailableYears();
-  }, [loadAvailableYears]);
-
-  // Extract specific param values to avoid infinite re-renders
-  const editModeParam = params.editMode as string | undefined;
-  const readingIdParam = params.readingId as string | undefined;
-  const trackIdParam = params.trackId as string | undefined;
-  const yearParam = params.year as string | undefined;
-
-  // Handle focus events separately
-  useFocusEffect(
-    React.useCallback(() => {
-      console.log('Record screen focused');
-      console.log('Edit mode param:', editModeParam);
-      console.log('Reading ID param:', readingIdParam);
-
-      // Check if we're in edit mode
-      if (editModeParam === 'true' && readingIdParam) {
-        console.log('Edit mode detected, loading reading data');
-        setEditMode(true);
-        setEditingReadingId(readingIdParam);
-        
-        // Load the reading data from params
-        setClassCurrentlyRunning((params.classCurrentlyRunning as string) || '');
-        
-        // Load left lane data
-        setLeftLane({
-          trackTemp: (params.leftLaneTrackTemp as string) || '',
-          uvIndex: (params.leftLaneUvIndex as string) || '',
-          kegSL: (params.leftLaneKegSL as string) || '',
-          kegOut: (params.leftLaneKegOut as string) || '',
-          grippoSL: (params.leftLaneGrippoSL as string) || '',
-          grippoOut: (params.leftLaneGrippoOut as string) || '',
-          shine: (params.leftLaneShine as string) || '',
-          notes: (params.leftLaneNotes as string) || '',
-          imageUri: (params.leftLaneImageUri as string) || undefined,
-        });
-        
-        // Load right lane data
-        setRightLane({
-          trackTemp: (params.rightLaneTrackTemp as string) || '',
-          uvIndex: (params.rightLaneUvIndex as string) || '',
-          kegSL: (params.rightLaneKegSL as string) || '',
-          kegOut: (params.rightLaneKegOut as string) || '',
-          grippoSL: (params.rightLaneGrippoSL as string) || '',
-          grippoOut: (params.rightLaneGrippoOut as string) || '',
-          shine: (params.rightLaneShine as string) || '',
-          notes: (params.rightLaneNotes as string) || '',
-          imageUri: (params.rightLaneImageUri as string) || undefined,
-        });
-      } else {
-        // Reset edit mode when not editing
-        setEditMode(false);
-        setEditingReadingId(null);
+  const loadTracks = async () => {
+    console.log('Loading tracks for record screen');
+    const allTracks = await SupabaseStorageService.getAllTracks();
+    setTracks(allTracks);
+    
+    // If trackId is in params, select that track
+    if (params.trackId && typeof params.trackId === 'string') {
+      const track = allTracks.find((t) => t.id === params.trackId);
+      if (track) {
+        console.log('Auto-selecting track from params:', track.name);
+        setSelectedTrack(track);
       }
-    }, [
-      editModeParam,
-      readingIdParam,
-      params.classCurrentlyRunning,
-      params.leftLaneTrackTemp,
-      params.leftLaneUvIndex,
-      params.leftLaneKegSL,
-      params.leftLaneKegOut,
-      params.leftLaneGrippoSL,
-      params.leftLaneGrippoOut,
-      params.leftLaneShine,
-      params.leftLaneNotes,
-      params.leftLaneImageUri,
-      params.rightLaneTrackTemp,
-      params.rightLaneUvIndex,
-      params.rightLaneKegSL,
-      params.rightLaneKegOut,
-      params.rightLaneGrippoSL,
-      params.rightLaneGrippoOut,
-      params.rightLaneShine,
-      params.rightLaneNotes,
-      params.rightLaneImageUri,
-    ])
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      console.log('Record screen focused');
+      loadTracks();
+    }, [])
   );
 
   useEffect(() => {
-    if (trackIdParam && tracks.length > 0) {
-      console.log('Attempting to select track with ID:', trackIdParam);
-      const track = tracks.find((t) => t.id === trackIdParam);
-      if (track) {
-        console.log('Auto-selecting track:', track.name);
-        setSelectedTrack(track);
-        setShowTrackPicker(false);
-      } else {
-        console.log('Track not found with id:', trackIdParam);
-        console.log('Available track IDs:', tracks.map(t => t.id));
-      }
-    }
-    
-    if (yearParam) {
-      const year = parseInt(yearParam);
-      console.log('Setting year from params:', year);
-      setSelectedYear(year);
-    }
-  }, [trackIdParam, yearParam, tracks]);
+    loadTracks();
+  }, []);
 
   const pickImage = async (lane: 'left' | 'right') => {
-    const result = await ImagePicker.launchImageLibraryAsync({
+    console.log('User tapped pick image for', lane, 'lane');
+    
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (!permissionResult.granted) {
+      Alert.alert('Permission Required', 'Please allow access to your photo library');
+      return;
+    }
+
+    const result = await ImagePicker.launchImagePickerAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
-      aspect: [4, 3],
       quality: 0.8,
     });
 
-    if (!result.canceled) {
+    if (!result.canceled && result.assets[0]) {
+      console.log('Image selected:', result.assets[0].uri);
       if (lane === 'left') {
         setLeftLane({ ...leftLane, imageUri: result.assets[0].uri });
       } else {
@@ -223,85 +97,59 @@ export default function RecordScreen() {
   };
 
   const handleSaveReading = async () => {
+    console.log('User tapped Save Reading button');
+    
     if (!selectedTrack) {
-      Alert.alert('Error', 'Please select a track first');
+      Alert.alert('Error', 'Please select a track');
       return;
     }
 
-    Keyboard.dismiss();
+    setIsSaving(true);
 
     const now = new Date();
-    const reading: TrackReading = {
-      id: editMode && editingReadingId ? editingReadingId : Date.now().toString(),
+    const reading = {
       trackId: selectedTrack.id,
-      date: now.toLocaleDateString(),
-      time: now.toLocaleTimeString(),
+      date: now.toISOString().split('T')[0],
+      time: now.toTimeString().split(' ')[0],
       timestamp: now.getTime(),
-      year: selectedYear,
-      classCurrentlyRunning: classCurrentlyRunning,
+      year: now.getFullYear(),
       leftLane,
       rightLane,
     };
 
-    console.log(editMode ? 'Updating reading:' : 'Saving new reading:', reading.id);
+    console.log('Saving reading:', reading);
 
-    try {
-      await SupabaseStorageService.saveReading(reading);
-      
-      const successMessage = editMode 
-        ? `Reading updated successfully for ${selectedYear}!`
-        : `Reading saved successfully for ${selectedYear}!`;
-      
-      Alert.alert('Success', successMessage, [
+    const savedReading = await SupabaseStorageService.createReading(reading);
+
+    setIsSaving(false);
+
+    if (savedReading) {
+      console.log('Reading saved successfully');
+      Alert.alert('Success', 'Reading saved successfully', [
         {
           text: 'OK',
           onPress: () => {
-            if (editMode) {
-              // Navigate back to browse after editing
-              router.back();
-            } else {
-              // Clear form for new entry
-              setClassCurrentlyRunning('');
-              setLeftLane({
-                trackTemp: '',
-                uvIndex: '',
-                kegSL: '',
-                kegOut: '',
-                grippoSL: '',
-                grippoOut: '',
-                shine: '',
-                notes: '',
-              });
-              setRightLane({
-                trackTemp: '',
-                uvIndex: '',
-                kegSL: '',
-                kegOut: '',
-                grippoSL: '',
-                grippoOut: '',
-                shine: '',
-                notes: '',
-              });
-            }
+            setLeftLane(getEmptyLaneReading());
+            setRightLane(getEmptyLaneReading());
+            Keyboard.dismiss();
           },
         },
       ]);
-    } catch (error) {
-      console.error('Error saving reading:', error);
+    } else {
       Alert.alert('Error', 'Failed to save reading');
     }
   };
 
   const handleCancel = () => {
-    if (editMode) {
-      router.back();
-    }
+    console.log('User tapped Cancel button');
+    setLeftLane(getEmptyLaneReading());
+    setRightLane(getEmptyLaneReading());
+    Keyboard.dismiss();
   };
 
   const handleTrackSelect = (track: Track) => {
-    console.log('Track selected from picker:', track.name);
+    console.log('User selected track:', track.name);
     setSelectedTrack(track);
-    setShowTrackPicker(false);
   };
 
   const renderLaneInputs = (
@@ -310,99 +158,107 @@ export default function RecordScreen() {
     title: string,
     laneType: 'left' | 'right'
   ) => {
-    const styles = getStyles(colors);
-    
     return (
       <View style={styles.laneSection}>
         <Text style={styles.laneTitle}>{title}</Text>
+        
+        <View style={styles.inputRow}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Track Temp</Text>
+            <TextInput
+              style={styles.input}
+              value={lane.trackTemp}
+              onChangeText={(text) => setLane({ ...lane, trackTemp: text })}
+              placeholder="°F"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="numeric"
+            />
+          </View>
+          
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>UV Index</Text>
+            <TextInput
+              style={styles.input}
+              value={lane.uvIndex}
+              onChangeText={(text) => setLane({ ...lane, uvIndex: text })}
+              placeholder="0-11"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="numeric"
+            />
+          </View>
+        </View>
 
-        <Text style={styles.label}>Track Temp (°F)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g., 85"
-          placeholderTextColor={colors.textSecondary}
-          value={lane.trackTemp}
-          onChangeText={(text) => setLane({ ...lane, trackTemp: text })}
-          keyboardType="numeric"
-          returnKeyType="next"
-        />
+        <View style={styles.inputRow}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Keg SL</Text>
+            <TextInput
+              style={styles.input}
+              value={lane.kegSL}
+              onChangeText={(text) => setLane({ ...lane, kegSL: text })}
+              placeholder="Value"
+              placeholderTextColor={colors.textSecondary}
+            />
+          </View>
+          
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Keg Out</Text>
+            <TextInput
+              style={styles.input}
+              value={lane.kegOut}
+              onChangeText={(text) => setLane({ ...lane, kegOut: text })}
+              placeholder="Value"
+              placeholderTextColor={colors.textSecondary}
+            />
+          </View>
+        </View>
 
-        <Text style={styles.label}>UV Index</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g., 7"
-          placeholderTextColor={colors.textSecondary}
-          value={lane.uvIndex}
-          onChangeText={(text) => setLane({ ...lane, uvIndex: text })}
-          keyboardType="numeric"
-          returnKeyType="next"
-        />
+        <View style={styles.inputRow}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Grippo SL</Text>
+            <TextInput
+              style={styles.input}
+              value={lane.grippoSL}
+              onChangeText={(text) => setLane({ ...lane, grippoSL: text })}
+              placeholder="Value"
+              placeholderTextColor={colors.textSecondary}
+            />
+          </View>
+          
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Grippo Out</Text>
+            <TextInput
+              style={styles.input}
+              value={lane.grippoOut}
+              onChangeText={(text) => setLane({ ...lane, grippoOut: text })}
+              placeholder="Value"
+              placeholderTextColor={colors.textSecondary}
+            />
+          </View>
+        </View>
 
-        <Text style={styles.label}>Keg SL</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter value"
-          placeholderTextColor={colors.textSecondary}
-          value={lane.kegSL}
-          onChangeText={(text) => setLane({ ...lane, kegSL: text })}
-          keyboardType="numeric"
-          returnKeyType="next"
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Shine</Text>
+          <TextInput
+            style={styles.input}
+            value={lane.shine}
+            onChangeText={(text) => setLane({ ...lane, shine: text })}
+            placeholder="Value"
+            placeholderTextColor={colors.textSecondary}
+          />
+        </View>
 
-        <Text style={styles.label}>Keg Out</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter value"
-          placeholderTextColor={colors.textSecondary}
-          value={lane.kegOut}
-          onChangeText={(text) => setLane({ ...lane, kegOut: text })}
-          keyboardType="numeric"
-          returnKeyType="next"
-        />
-
-        <Text style={styles.label}>Grippo SL</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter value"
-          placeholderTextColor={colors.textSecondary}
-          value={lane.grippoSL}
-          onChangeText={(text) => setLane({ ...lane, grippoSL: text })}
-          keyboardType="numeric"
-          returnKeyType="next"
-        />
-
-        <Text style={styles.label}>Grippo Out</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter value"
-          placeholderTextColor={colors.textSecondary}
-          value={lane.grippoOut}
-          onChangeText={(text) => setLane({ ...lane, grippoOut: text })}
-          keyboardType="numeric"
-          returnKeyType="next"
-        />
-
-        <Text style={styles.label}>Shine</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter value"
-          placeholderTextColor={colors.textSecondary}
-          value={lane.shine}
-          onChangeText={(text) => setLane({ ...lane, shine: text })}
-          returnKeyType="next"
-        />
-
-        <Text style={styles.label}>Notes</Text>
-        <TextInput
-          style={[styles.input, styles.notesInput]}
-          placeholder="Additional notes..."
-          placeholderTextColor={colors.textSecondary}
-          value={lane.notes}
-          onChangeText={(text) => setLane({ ...lane, notes: text })}
-          multiline
-          numberOfLines={3}
-          returnKeyType="done"
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Notes</Text>
+          <TextInput
+            style={[styles.input, styles.notesInput]}
+            value={lane.notes}
+            onChangeText={(text) => setLane({ ...lane, notes: text })}
+            placeholder="Additional notes..."
+            placeholderTextColor={colors.textSecondary}
+            multiline
+            numberOfLines={3}
+          />
+        </View>
 
         <TouchableOpacity
           style={styles.imageButton}
@@ -410,9 +266,9 @@ export default function RecordScreen() {
         >
           <IconSymbol
             ios_icon_name="camera"
-            android_material_icon_name="camera_alt"
-            size={20}
-            color="#ffffff"
+            android_material_icon_name="camera"
+            size={24}
+            color={colors.primary}
           />
           <Text style={styles.imageButtonText}>
             {lane.imageUri ? 'Change Photo' : 'Add Photo'}
@@ -430,173 +286,60 @@ export default function RecordScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.headerContainer}>
-          <Text style={styles.title}>{editMode ? 'Edit Reading' : 'Record Data'}</Text>
-          {editMode && (
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={handleCancel}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Record Reading</Text>
+      </View>
 
-        <View style={styles.yearSelector}>
-          <Text style={styles.label}>Select Year *</Text>
-          <TouchableOpacity
-            style={styles.yearButton}
-            onPress={() => {
-              console.log('Year picker toggled');
-              Keyboard.dismiss();
-              setShowYearPicker(!showYearPicker);
-            }}
-            disabled={editMode}
-          >
-            <View style={styles.yearButtonContent}>
-              <IconSymbol
-                ios_icon_name="calendar"
-                android_material_icon_name="calendar_today"
-                size={20}
-                color={editMode ? colors.textSecondary : colors.primary}
-              />
-              <Text style={[styles.yearButtonText, editMode && styles.disabledText]}>{selectedYear}</Text>
-            </View>
-            {!editMode && (
-              <IconSymbol
-                ios_icon_name="chevron.down"
-                android_material_icon_name={showYearPicker ? 'expand_less' : 'expand_more'}
-                size={20}
-                color={colors.text}
-              />
-            )}
-          </TouchableOpacity>
-
-          {showYearPicker && !editMode && (
-            <View style={styles.yearList}>
-              {availableYears.map((year, index) => (
-                <React.Fragment key={index}>
-                  <TouchableOpacity
-                    style={[
-                      styles.yearOption,
-                      selectedYear === year && styles.yearOptionSelected,
-                    ]}
-                    onPress={() => {
-                      console.log('Year selected in record screen:', year);
-                      setSelectedYear(year);
-                      setShowYearPicker(false);
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.yearOptionText,
-                        selectedYear === year && styles.yearOptionTextSelected,
-                      ]}
-                    >
-                      {year}
-                    </Text>
-                  </TouchableOpacity>
-                </React.Fragment>
-              ))}
-            </View>
-          )}
-        </View>
-
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         <View style={styles.trackSelector}>
-          <Text style={styles.label}>Select Track *</Text>
-          <TouchableOpacity
-            style={styles.trackButton}
-            onPress={() => {
-              console.log('Track picker toggled');
-              Keyboard.dismiss();
-              setShowTrackPicker(!showTrackPicker);
-            }}
-            disabled={editMode}
-          >
-            <Text style={[styles.trackButtonText, editMode && styles.disabledText]}>
-              {selectedTrack ? selectedTrack.name : 'Choose a track...'}
-            </Text>
-            {!editMode && (
-              <IconSymbol
-                ios_icon_name="chevron.down"
-                android_material_icon_name={showTrackPicker ? 'expand_less' : 'expand_more'}
-                size={20}
-                color={colors.text}
-              />
-            )}
-          </TouchableOpacity>
-
-          {showTrackPicker && !editMode && (
-            <View style={styles.trackList}>
-              {tracks.length === 0 ? (
-                <Text style={styles.noTracksText}>
-                  No tracks available. Add a track first in the Tracks tab.
+          <Text style={styles.sectionTitle}>Select Track</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {tracks.map((track) => (
+              <TouchableOpacity
+                key={track.id}
+                style={[
+                  styles.trackChip,
+                  selectedTrack?.id === track.id && styles.trackChipActive,
+                ]}
+                onPress={() => handleTrackSelect(track)}
+              >
+                <Text
+                  style={[
+                    styles.trackChipText,
+                    selectedTrack?.id === track.id && styles.trackChipTextActive,
+                  ]}
+                >
+                  {track.name}
                 </Text>
-              ) : (
-                tracks.map((track, index) => (
-                  <React.Fragment key={track.id}>
-                    <TouchableOpacity
-                      style={[
-                        styles.trackOption,
-                        selectedTrack?.id === track.id && styles.trackOptionSelected,
-                      ]}
-                      onPress={() => handleTrackSelect(track)}
-                    >
-                      <Text
-                        style={[
-                          styles.trackOptionText,
-                          selectedTrack?.id === track.id && styles.trackOptionTextSelected,
-                        ]}
-                      >
-                        {track.name}
-                      </Text>
-                      {track.location && (
-                        <Text style={styles.trackOptionLocation}>
-                          {track.location}
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  </React.Fragment>
-                ))
-              )}
-            </View>
-          )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
 
         {selectedTrack && (
           <>
-            <View style={styles.classSection}>
-              <Text style={styles.label}>Class Currently Running</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., Pro Stock, Super Comp, etc."
-                placeholderTextColor={colors.textSecondary}
-                value={classCurrentlyRunning}
-                onChangeText={setClassCurrentlyRunning}
-                returnKeyType="next"
-              />
-            </View>
-
             {renderLaneInputs(leftLane, setLeftLane, 'Left Lane', 'left')}
             {renderLaneInputs(rightLane, setRightLane, 'Right Lane', 'right')}
 
-            <TouchableOpacity style={styles.saveButton} onPress={handleSaveReading}>
-              <IconSymbol
-                ios_icon_name="checkmark"
-                android_material_icon_name="check"
-                size={20}
-                color="#ffffff"
-              />
-              <Text style={styles.saveButtonText}>
-                {editMode ? `Update Reading for ${selectedYear}` : `Save Reading for ${selectedYear}`}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.actions}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleCancel}
+                disabled={isSaving}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+                onPress={handleSaveReading}
+                disabled={isSaving}
+              >
+                <Text style={styles.saveButtonText}>
+                  {isSaving ? 'Saving...' : 'Save Reading'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </>
         )}
       </ScrollView>
@@ -609,234 +352,149 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
     container: {
       flex: 1,
       backgroundColor: colors.background,
+      paddingTop: Platform.OS === 'android' ? 48 : 0,
     },
-    scrollView: {
-      flex: 1,
+    header: {
+      paddingHorizontal: 20,
+      paddingVertical: 16,
     },
-    scrollContent: {
-      paddingTop: Platform.OS === 'android' ? 48 : 60,
-      paddingHorizontal: 16,
-      paddingBottom: 120,
-    },
-    headerContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 20,
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: '700',
+    headerTitle: {
+      fontSize: 32,
+      fontWeight: 'bold',
       color: colors.text,
     },
-    cancelButton: {
-      paddingVertical: 8,
-      paddingHorizontal: 16,
-      backgroundColor: colors.card,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
+    content: {
+      flex: 1,
     },
-    cancelButtonText: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.primary,
+    contentContainer: {
+      padding: 20,
     },
-    yearSelector: {
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 20,
-      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-      elevation: 2,
+    trackSelector: {
+      marginBottom: 24,
     },
-    yearButton: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 8,
-      paddingVertical: 12,
-      paddingHorizontal: 12,
-    },
-    yearButtonContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    yearButtonText: {
+    sectionTitle: {
       fontSize: 18,
       fontWeight: '600',
       color: colors.text,
+      marginBottom: 12,
     },
-    disabledText: {
-      color: colors.textSecondary,
-    },
-    yearList: {
-      marginTop: 12,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      paddingTop: 12,
-    },
-    yearOption: {
-      paddingVertical: 12,
-      paddingHorizontal: 12,
-      borderRadius: 8,
-      marginBottom: 8,
-      backgroundColor: colors.background,
-    },
-    yearOptionSelected: {
-      backgroundColor: colors.primary,
-    },
-    yearOptionText: {
-      fontSize: 16,
-      fontWeight: '500',
-      color: colors.text,
-      textAlign: 'center',
-    },
-    yearOptionTextSelected: {
-      color: '#ffffff',
-    },
-    trackSelector: {
+    trackChip: {
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 20,
       backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 20,
-      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-      elevation: 2,
-    },
-    label: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: colors.text,
-      marginBottom: 8,
-    },
-    trackButton: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      backgroundColor: colors.background,
+      marginRight: 8,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 8,
-      paddingVertical: 12,
-      paddingHorizontal: 12,
     },
-    trackButtonText: {
-      fontSize: 16,
-      color: colors.text,
-    },
-    trackList: {
-      marginTop: 12,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      paddingTop: 12,
-    },
-    trackOption: {
-      paddingVertical: 12,
-      paddingHorizontal: 12,
-      borderRadius: 8,
-      marginBottom: 8,
-      backgroundColor: colors.background,
-    },
-    trackOptionSelected: {
+    trackChipActive: {
       backgroundColor: colors.primary,
+      borderColor: colors.primary,
     },
-    trackOptionText: {
-      fontSize: 16,
-      fontWeight: '500',
-      color: colors.text,
-    },
-    trackOptionTextSelected: {
-      color: '#ffffff',
-    },
-    trackOptionLocation: {
-      fontSize: 12,
-      marginTop: 2,
-      color: colors.textSecondary,
-    },
-    noTracksText: {
+    trackChipText: {
       fontSize: 14,
-      textAlign: 'center',
-      paddingVertical: 12,
-      color: colors.textSecondary,
+      color: colors.text,
+      fontWeight: '500',
     },
-    classSection: {
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 20,
-      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-      elevation: 2,
+    trackChipTextActive: {
+      color: '#FFFFFF',
     },
     laneSection: {
       backgroundColor: colors.card,
       borderRadius: 12,
       padding: 16,
-      marginBottom: 20,
-      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-      elevation: 2,
+      marginBottom: 16,
     },
     laneTitle: {
       fontSize: 20,
       fontWeight: '600',
-      marginBottom: 16,
       color: colors.text,
+      marginBottom: 16,
+    },
+    inputRow: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 12,
+    },
+    inputGroup: {
+      flex: 1,
+    },
+    inputLabel: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: colors.textSecondary,
+      marginBottom: 6,
     },
     input: {
       backgroundColor: colors.background,
+      borderRadius: 8,
+      padding: 12,
+      fontSize: 16,
+      color: colors.text,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 8,
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-      fontSize: 16,
-      marginBottom: 12,
-      color: colors.text,
     },
     notesInput: {
-      minHeight: 80,
+      height: 80,
       textAlignVertical: 'top',
     },
     imageButton: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: colors.secondary,
-      paddingVertical: 12,
+      backgroundColor: colors.background,
       borderRadius: 8,
-      gap: 8,
+      padding: 12,
+      marginTop: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
     },
     imageButtonText: {
-      color: '#ffffff',
       fontSize: 16,
-      fontWeight: '600',
+      color: colors.primary,
+      marginLeft: 8,
+      fontWeight: '500',
     },
     previewImage: {
       width: '100%',
       height: 200,
       borderRadius: 8,
       marginTop: 12,
-      resizeMode: 'cover',
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 24,
+      marginBottom: 40,
+    },
+    cancelButton: {
+      flex: 1,
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    cancelButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
     },
     saveButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.accent,
-      paddingVertical: 16,
+      flex: 1,
+      backgroundColor: colors.primary,
       borderRadius: 12,
-      gap: 8,
-      marginBottom: 20,
-      boxShadow: '0px 4px 8px rgba(40, 167, 69, 0.3)',
-      elevation: 4,
+      padding: 16,
+      alignItems: 'center',
+    },
+    saveButtonDisabled: {
+      opacity: 0.6,
     },
     saveButtonText: {
-      color: '#ffffff',
-      fontSize: 18,
-      fontWeight: '700',
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#FFFFFF',
     },
   });
 }
