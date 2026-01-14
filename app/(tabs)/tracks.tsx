@@ -12,7 +12,7 @@ import {
   Keyboard,
   RefreshControl,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, Stack } from 'expo-router';
 import { useThemeColors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { Track } from '@/types/TrackData';
@@ -115,132 +115,135 @@ export default function TracksScreen() {
   const styles = getStyles(colors);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Tracks</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => {
-            console.log('User tapped + button');
-            setIsAddingTrack(!isAddingTrack);
-          }}
-        >
-          <IconSymbol
-            ios_icon_name={isAddingTrack ? 'xmark' : 'plus'}
-            android_material_icon_name={isAddingTrack ? 'close' : 'add'}
-            size={24}
-            color="#FFFFFF"
-          />
-        </TouchableOpacity>
-      </View>
-
-      {isAddingTrack && (
-        <View style={styles.addTrackForm}>
-          <TextInput
-            style={styles.input}
-            placeholder="Track Name"
-            placeholderTextColor={colors.textSecondary}
-            value={newTrackName}
-            onChangeText={setNewTrackName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Location"
-            placeholderTextColor={colors.textSecondary}
-            value={newTrackLocation}
-            onChangeText={setNewTrackLocation}
-          />
-          <TouchableOpacity style={styles.saveButton} onPress={handleAddTrack}>
-            <Text style={styles.saveButtonText}>Add Track</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.yearFilter}
-        contentContainerStyle={styles.yearFilterContent}
-      >
-        <TouchableOpacity
-          style={[styles.yearChip, selectedYear === null && styles.yearChipActive]}
-          onPress={() => {
-            console.log('User selected All Years filter');
-            setSelectedYear(null);
-          }}
-        >
-          <Text style={[styles.yearChipText, selectedYear === null && styles.yearChipTextActive]}>
-            All Years
-          </Text>
-        </TouchableOpacity>
-        {availableYears.map((year) => (
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Tracks</Text>
           <TouchableOpacity
-            key={year}
-            style={[styles.yearChip, selectedYear === year && styles.yearChipActive]}
+            style={styles.addButton}
             onPress={() => {
-              console.log('User selected year filter:', year);
-              setSelectedYear(year);
+              console.log('User tapped + button');
+              setIsAddingTrack(!isAddingTrack);
             }}
           >
-            <Text style={[styles.yearChipText, selectedYear === year && styles.yearChipTextActive]}>
-              {year}
+            <IconSymbol
+              ios_icon_name={isAddingTrack ? 'xmark' : 'plus'}
+              android_material_icon_name={isAddingTrack ? 'close' : 'add'}
+              size={24}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        </View>
+
+        {isAddingTrack && (
+          <View style={styles.addTrackForm}>
+            <TextInput
+              style={styles.input}
+              placeholder="Track Name"
+              placeholderTextColor={colors.textSecondary}
+              value={newTrackName}
+              onChangeText={setNewTrackName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Location"
+              placeholderTextColor={colors.textSecondary}
+              value={newTrackLocation}
+              onChangeText={setNewTrackLocation}
+            />
+            <TouchableOpacity style={styles.saveButton} onPress={handleAddTrack}>
+              <Text style={styles.saveButtonText}>Add Track</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.yearFilter}
+          contentContainerStyle={styles.yearFilterContent}
+        >
+          <TouchableOpacity
+            style={[styles.yearChip, selectedYear === null && styles.yearChipActive]}
+            onPress={() => {
+              console.log('User selected All Years filter');
+              setSelectedYear(null);
+            }}
+          >
+            <Text style={[styles.yearChipText, selectedYear === null && styles.yearChipTextActive]}>
+              All Years
             </Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <ScrollView
-        style={styles.tracksList}
-        contentContainerStyle={styles.tracksListContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary}
-          />
-        }
-      >
-        {filteredTracks.length === 0 ? (
-          <View style={styles.emptyState}>
-            <IconSymbol
-              ios_icon_name="flag.checkered"
-              android_material_icon_name="sports-score"
-              size={64}
-              color={colors.textSecondary}
-            />
-            <Text style={styles.emptyStateText}>No tracks yet</Text>
-            <Text style={styles.emptyStateSubtext}>Tap the + button to add your first track</Text>
-          </View>
-        ) : (
-          filteredTracks.map((track) => (
+          {availableYears.map((year) => (
             <TouchableOpacity
-              key={track.id}
-              style={styles.trackCard}
-              onPress={() => handleTrackPress(track)}
+              key={year}
+              style={[styles.yearChip, selectedYear === year && styles.yearChipActive]}
+              onPress={() => {
+                console.log('User selected year filter:', year);
+                setSelectedYear(year);
+              }}
             >
-              <View style={styles.trackIcon}>
-                <IconSymbol
-                  ios_icon_name="flag.checkered"
-                  android_material_icon_name="sports-score"
-                  size={32}
-                  color={colors.primary}
-                />
-              </View>
-              <View style={styles.trackInfo}>
-                <Text style={styles.trackName}>{track.name}</Text>
-                <Text style={styles.trackLocation}>{track.location}</Text>
-              </View>
+              <Text style={[styles.yearChipText, selectedYear === year && styles.yearChipTextActive]}>
+                {year}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <ScrollView
+          style={styles.tracksList}
+          contentContainerStyle={styles.tracksListContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.primary}
+            />
+          }
+        >
+          {filteredTracks.length === 0 ? (
+            <View style={styles.emptyState}>
               <IconSymbol
-                ios_icon_name="chevron.right"
-                android_material_icon_name="arrow-forward"
-                size={20}
+                ios_icon_name="flag.checkered"
+                android_material_icon_name="sports-score"
+                size={64}
                 color={colors.textSecondary}
               />
-            </TouchableOpacity>
-          ))
-        )}
-      </ScrollView>
-    </View>
+              <Text style={styles.emptyStateText}>No tracks yet</Text>
+              <Text style={styles.emptyStateSubtext}>Tap the + button to add your first track</Text>
+            </View>
+          ) : (
+            filteredTracks.map((track) => (
+              <TouchableOpacity
+                key={track.id}
+                style={styles.trackCard}
+                onPress={() => handleTrackPress(track)}
+              >
+                <View style={styles.trackIcon}>
+                  <IconSymbol
+                    ios_icon_name="flag.checkered"
+                    android_material_icon_name="sports-score"
+                    size={32}
+                    color={colors.primary}
+                  />
+                </View>
+                <View style={styles.trackInfo}>
+                  <Text style={styles.trackName}>{track.name}</Text>
+                  <Text style={styles.trackLocation}>{track.location}</Text>
+                </View>
+                <IconSymbol
+                  ios_icon_name="chevron.right"
+                  android_material_icon_name="arrow-forward"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+            ))
+          )}
+        </ScrollView>
+      </View>
+    </>
   );
 }
 

@@ -9,7 +9,7 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import { useThemeColors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
@@ -42,92 +42,95 @@ export default function SettingsScreen() {
   const styles = getStyles(colors);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Settings</Text>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Settings</Text>
+        </View>
+
+        <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Account</Text>
+            
+            <View style={styles.card}>
+              <View style={styles.infoRow}>
+                <IconSymbol
+                  ios_icon_name="person.circle"
+                  android_material_icon_name="account-circle"
+                  size={24}
+                  color={colors.primary}
+                />
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoLabel}>Email</Text>
+                  <Text style={styles.infoValue}>{user?.email || 'Not available'}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>About</Text>
+            
+            <View style={styles.card}>
+              <View style={styles.infoRow}>
+                <IconSymbol
+                  ios_icon_name="flag.checkered"
+                  android_material_icon_name="sports-score"
+                  size={24}
+                  color={colors.primary}
+                />
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoLabel}>App Name</Text>
+                  <Text style={styles.infoValue}>Track Specialist</Text>
+                </View>
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.infoRow}>
+                <IconSymbol
+                  ios_icon_name="info.circle"
+                  android_material_icon_name="info"
+                  size={24}
+                  color={colors.primary}
+                />
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoLabel}>Version</Text>
+                  <Text style={styles.infoValue}>1.0.0</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Multi-User System</Text>
+            
+            <View style={styles.card}>
+              <Text style={styles.featureText}>
+                ✓ All team members can view all tracks and readings
+              </Text>
+              <Text style={styles.featureText}>
+                ✓ Real-time synchronization across devices
+              </Text>
+              <Text style={styles.featureText}>
+                ✓ Secure authentication with Supabase
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <IconSymbol
+              ios_icon_name="arrow.right.square"
+              android_material_icon_name="logout"
+              size={24}
+              color="#FF3B30"
+            />
+            <Text style={styles.logoutButtonText}>Logout</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
-
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
-          
-          <View style={styles.card}>
-            <View style={styles.infoRow}>
-              <IconSymbol
-                ios_icon_name="person.circle"
-                android_material_icon_name="account-circle"
-                size={24}
-                color={colors.primary}
-              />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Email</Text>
-                <Text style={styles.infoValue}>{user?.email || 'Not available'}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
-          
-          <View style={styles.card}>
-            <View style={styles.infoRow}>
-              <IconSymbol
-                ios_icon_name="flag.checkered"
-                android_material_icon_name="sports-score"
-                size={24}
-                color={colors.primary}
-              />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>App Name</Text>
-                <Text style={styles.infoValue}>Track Specialist</Text>
-              </View>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.infoRow}>
-              <IconSymbol
-                ios_icon_name="info.circle"
-                android_material_icon_name="info"
-                size={24}
-                color={colors.primary}
-              />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Version</Text>
-                <Text style={styles.infoValue}>1.0.0</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Multi-User System</Text>
-          
-          <View style={styles.card}>
-            <Text style={styles.featureText}>
-              ✓ All team members can view all tracks and readings
-            </Text>
-            <Text style={styles.featureText}>
-              ✓ Real-time synchronization across devices
-            </Text>
-            <Text style={styles.featureText}>
-              ✓ Secure authentication with Supabase
-            </Text>
-          </View>
-        </View>
-
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <IconSymbol
-            ios_icon_name="arrow.right.square"
-            android_material_icon_name="logout"
-            size={24}
-            color="#FF3B30"
-          />
-          <Text style={styles.logoutButtonText}>Logout</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </View>
+    </>
   );
 }
 

@@ -12,7 +12,7 @@ import {
   Platform,
   Keyboard,
 } from 'react-native';
-import { useLocalSearchParams, useFocusEffect, useRouter } from 'expo-router';
+import { useLocalSearchParams, useFocusEffect, useRouter, Stack } from 'expo-router';
 import { useThemeColors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { Track, LaneReading } from '@/types/TrackData';
@@ -285,65 +285,68 @@ export default function RecordScreen() {
   const styles = getStyles(colors);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Record Reading</Text>
-      </View>
-
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        <View style={styles.trackSelector}>
-          <Text style={styles.sectionTitle}>Select Track</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {tracks.map((track) => (
-              <TouchableOpacity
-                key={track.id}
-                style={[
-                  styles.trackChip,
-                  selectedTrack?.id === track.id && styles.trackChipActive,
-                ]}
-                onPress={() => handleTrackSelect(track)}
-              >
-                <Text
-                  style={[
-                    styles.trackChipText,
-                    selectedTrack?.id === track.id && styles.trackChipTextActive,
-                  ]}
-                >
-                  {track.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Record Reading</Text>
         </View>
 
-        {selectedTrack && (
-          <>
-            {renderLaneInputs(leftLane, setLeftLane, 'Left Lane', 'left')}
-            {renderLaneInputs(rightLane, setRightLane, 'Right Lane', 'right')}
+        <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+          <View style={styles.trackSelector}>
+            <Text style={styles.sectionTitle}>Select Track</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {tracks.map((track) => (
+                <TouchableOpacity
+                  key={track.id}
+                  style={[
+                    styles.trackChip,
+                    selectedTrack?.id === track.id && styles.trackChipActive,
+                  ]}
+                  onPress={() => handleTrackSelect(track)}
+                >
+                  <Text
+                    style={[
+                      styles.trackChipText,
+                      selectedTrack?.id === track.id && styles.trackChipTextActive,
+                    ]}
+                  >
+                    {track.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
 
-            <View style={styles.actions}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={handleCancel}
-                disabled={isSaving}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
+          {selectedTrack && (
+            <>
+              {renderLaneInputs(leftLane, setLeftLane, 'Left Lane', 'left')}
+              {renderLaneInputs(rightLane, setRightLane, 'Right Lane', 'right')}
 
-              <TouchableOpacity
-                style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-                onPress={handleSaveReading}
-                disabled={isSaving}
-              >
-                <Text style={styles.saveButtonText}>
-                  {isSaving ? 'Saving...' : 'Save Reading'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
-      </ScrollView>
-    </View>
+              <View style={styles.actions}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={handleCancel}
+                  disabled={isSaving}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+                  onPress={handleSaveReading}
+                  disabled={isSaving}
+                >
+                  <Text style={styles.saveButtonText}>
+                    {isSaving ? 'Saving...' : 'Save Reading'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+        </ScrollView>
+      </View>
+    </>
   );
 }
 

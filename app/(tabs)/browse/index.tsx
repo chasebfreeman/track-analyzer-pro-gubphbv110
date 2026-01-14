@@ -9,7 +9,7 @@ import {
   Platform,
   RefreshControl,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, Stack } from 'expo-router';
 import { useThemeColors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { Track, TrackReading, DayReadings } from '@/types/TrackData';
@@ -141,158 +141,161 @@ export default function BrowseScreen() {
   const styles = getStyles(colors);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Browse Readings</Text>
-      </View>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Browse Readings</Text>
+        </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.trackSelector}
-        contentContainerStyle={styles.trackSelectorContent}
-      >
-        {tracks.map((track) => (
-          <TouchableOpacity
-            key={track.id}
-            style={[
-              styles.trackChip,
-              selectedTrack?.id === track.id && styles.trackChipActive,
-            ]}
-            onPress={() => {
-              console.log('User selected track:', track.name);
-              setSelectedTrack(track);
-            }}
-          >
-            <Text
-              style={[
-                styles.trackChipText,
-                selectedTrack?.id === track.id && styles.trackChipTextActive,
-              ]}
-            >
-              {track.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.yearFilter}
-        contentContainerStyle={styles.yearFilterContent}
-      >
-        <TouchableOpacity
-          style={[styles.yearChip, selectedYear === null && styles.yearChipActive]}
-          onPress={() => {
-            console.log('User selected All Years filter');
-            setSelectedYear(null);
-          }}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.trackSelector}
+          contentContainerStyle={styles.trackSelectorContent}
         >
-          <Text style={[styles.yearChipText, selectedYear === null && styles.yearChipTextActive]}>
-            All Years
-          </Text>
-        </TouchableOpacity>
-        {availableYears.map((year) => (
+          {tracks.map((track) => (
+            <TouchableOpacity
+              key={track.id}
+              style={[
+                styles.trackChip,
+                selectedTrack?.id === track.id && styles.trackChipActive,
+              ]}
+              onPress={() => {
+                console.log('User selected track:', track.name);
+                setSelectedTrack(track);
+              }}
+            >
+              <Text
+                style={[
+                  styles.trackChipText,
+                  selectedTrack?.id === track.id && styles.trackChipTextActive,
+                ]}
+              >
+                {track.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.yearFilter}
+          contentContainerStyle={styles.yearFilterContent}
+        >
           <TouchableOpacity
-            key={year}
-            style={[styles.yearChip, selectedYear === year && styles.yearChipActive]}
+            style={[styles.yearChip, selectedYear === null && styles.yearChipActive]}
             onPress={() => {
-              console.log('User selected year filter:', year);
-              setSelectedYear(year);
+              console.log('User selected All Years filter');
+              setSelectedYear(null);
             }}
           >
-            <Text style={[styles.yearChipText, selectedYear === year && styles.yearChipTextActive]}>
-              {year}
+            <Text style={[styles.yearChipText, selectedYear === null && styles.yearChipTextActive]}>
+              All Years
             </Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+          {availableYears.map((year) => (
+            <TouchableOpacity
+              key={year}
+              style={[styles.yearChip, selectedYear === year && styles.yearChipActive]}
+              onPress={() => {
+                console.log('User selected year filter:', year);
+                setSelectedYear(year);
+              }}
+            >
+              <Text style={[styles.yearChipText, selectedYear === year && styles.yearChipTextActive]}>
+                {year}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
-      <ScrollView
-        style={styles.readingsList}
-        contentContainerStyle={styles.readingsListContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary}
-          />
-        }
-      >
-        {groupedReadings.length === 0 ? (
-          <View style={styles.emptyState}>
-            <IconSymbol
-              ios_icon_name="doc.text"
-              android_material_icon_name="description"
-              size={64}
-              color={colors.textSecondary}
+        <ScrollView
+          style={styles.readingsList}
+          contentContainerStyle={styles.readingsListContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.primary}
             />
-            <Text style={styles.emptyStateText}>No readings yet</Text>
-            <Text style={styles.emptyStateSubtext}>
-              Record your first reading in the Record tab
-            </Text>
-          </View>
-        ) : (
-          groupedReadings.map((day) => (
-            <View key={day.date} style={styles.dayGroup}>
-              <TouchableOpacity
-                style={styles.dayHeader}
-                onPress={() => toggleDayExpansion(day.date)}
-              >
-                <View>
-                  <Text style={styles.dayDate}>{formatDateWithDay(day.date)}</Text>
-                  <Text style={styles.dayCount}>{day.readings.length} reading(s)</Text>
-                </View>
-                <IconSymbol
-                  ios_icon_name={expandedDays.has(day.date) ? 'chevron.up' : 'chevron.down'}
-                  android_material_icon_name={expandedDays.has(day.date) ? 'arrow-upward' : 'arrow-downward'}
-                  size={20}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-
-              {expandedDays.has(day.date) && (
-                <View style={styles.readingsContainer}>
-                  {day.readings.map((reading) => (
-                    <TouchableOpacity
-                      key={reading.id}
-                      style={styles.readingCard}
-                      onPress={() => handleReadingPress(reading)}
-                    >
-                      <View style={styles.readingHeader}>
-                        <IconSymbol
-                          ios_icon_name="clock"
-                          android_material_icon_name="access-time"
-                          size={16}
-                          color={colors.primary}
-                        />
-                        <Text style={styles.readingTime}>{reading.time}</Text>
-                      </View>
-                      <View style={styles.readingData}>
-                        <Text style={styles.readingDataText}>
-                          Left: {reading.leftLane.trackTemp}°F, UV {reading.leftLane.uvIndex}
-                        </Text>
-                        <Text style={styles.readingDataText}>
-                          Right: {reading.rightLane.trackTemp}°F, UV {reading.rightLane.uvIndex}
-                        </Text>
-                      </View>
-                      <IconSymbol
-                        ios_icon_name="chevron.right"
-                        android_material_icon_name="arrow-forward"
-                        size={16}
-                        color={colors.textSecondary}
-                        style={styles.readingChevron}
-                      />
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
+          }
+        >
+          {groupedReadings.length === 0 ? (
+            <View style={styles.emptyState}>
+              <IconSymbol
+                ios_icon_name="doc.text"
+                android_material_icon_name="description"
+                size={64}
+                color={colors.textSecondary}
+              />
+              <Text style={styles.emptyStateText}>No readings yet</Text>
+              <Text style={styles.emptyStateSubtext}>
+                Record your first reading in the Record tab
+              </Text>
             </View>
-          ))
-        )}
-      </ScrollView>
-    </View>
+          ) : (
+            groupedReadings.map((day) => (
+              <View key={day.date} style={styles.dayGroup}>
+                <TouchableOpacity
+                  style={styles.dayHeader}
+                  onPress={() => toggleDayExpansion(day.date)}
+                >
+                  <View>
+                    <Text style={styles.dayDate}>{formatDateWithDay(day.date)}</Text>
+                    <Text style={styles.dayCount}>{day.readings.length} reading(s)</Text>
+                  </View>
+                  <IconSymbol
+                    ios_icon_name={expandedDays.has(day.date) ? 'chevron.up' : 'chevron.down'}
+                    android_material_icon_name={expandedDays.has(day.date) ? 'arrow-upward' : 'arrow-downward'}
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+
+                {expandedDays.has(day.date) && (
+                  <View style={styles.readingsContainer}>
+                    {day.readings.map((reading) => (
+                      <TouchableOpacity
+                        key={reading.id}
+                        style={styles.readingCard}
+                        onPress={() => handleReadingPress(reading)}
+                      >
+                        <View style={styles.readingHeader}>
+                          <IconSymbol
+                            ios_icon_name="clock"
+                            android_material_icon_name="access-time"
+                            size={16}
+                            color={colors.primary}
+                          />
+                          <Text style={styles.readingTime}>{reading.time}</Text>
+                        </View>
+                        <View style={styles.readingData}>
+                          <Text style={styles.readingDataText}>
+                            Left: {reading.leftLane.trackTemp}°F, UV {reading.leftLane.uvIndex}
+                          </Text>
+                          <Text style={styles.readingDataText}>
+                            Right: {reading.rightLane.trackTemp}°F, UV {reading.rightLane.uvIndex}
+                          </Text>
+                        </View>
+                        <IconSymbol
+                          ios_icon_name="chevron.right"
+                          android_material_icon_name="arrow-forward"
+                          size={16}
+                          color={colors.textSecondary}
+                          style={styles.readingChevron}
+                        />
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+            ))
+          )}
+        </ScrollView>
+      </View>
+    </>
   );
 }
 
