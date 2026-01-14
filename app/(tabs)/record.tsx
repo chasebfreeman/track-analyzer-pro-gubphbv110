@@ -44,7 +44,7 @@ export default function RecordScreen() {
     };
   }
 
-  const loadTracks = async () => {
+  const loadTracks = useCallback(async () => {
     console.log('Loading tracks for record screen');
     const allTracks = await SupabaseStorageService.getAllTracks();
     setTracks(allTracks);
@@ -57,18 +57,18 @@ export default function RecordScreen() {
         setSelectedTrack(track);
       }
     }
-  };
+  }, [params.trackId]);
 
   useFocusEffect(
     useCallback(() => {
       console.log('Record screen focused');
       loadTracks();
-    }, [])
+    }, [loadTracks])
   );
 
   useEffect(() => {
     loadTracks();
-  }, []);
+  }, [loadTracks]);
 
   const pickImage = async (lane: 'left' | 'right') => {
     console.log('User tapped pick image for', lane, 'lane');
@@ -80,7 +80,7 @@ export default function RecordScreen() {
       return;
     }
 
-    const result = await ImagePicker.launchImagePickerAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.8,
