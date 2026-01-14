@@ -12,6 +12,7 @@ import {
   Platform,
   Keyboard,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useFocusEffect, useRouter, Stack } from 'expo-router';
 import { useThemeColors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -287,7 +288,7 @@ export default function RecordScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Record Reading</Text>
         </View>
@@ -345,7 +346,7 @@ export default function RecordScreen() {
             </>
           )}
         </ScrollView>
-      </View>
+      </SafeAreaView>
     </>
   );
 }
@@ -355,7 +356,6 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
     container: {
       flex: 1,
       backgroundColor: colors.background,
-      paddingTop: Platform.OS === 'android' ? 48 : 0,
     },
     header: {
       paddingHorizontal: 20,

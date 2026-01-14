@@ -9,6 +9,7 @@ import {
   Platform,
   RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, Stack } from 'expo-router';
 import { useThemeColors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -143,7 +144,7 @@ export default function BrowseScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Browse Readings</Text>
         </View>
@@ -294,7 +295,7 @@ export default function BrowseScreen() {
             ))
           )}
         </ScrollView>
-      </View>
+      </SafeAreaView>
     </>
   );
 }
@@ -304,7 +305,6 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
     container: {
       flex: 1,
       backgroundColor: colors.background,
-      paddingTop: Platform.OS === 'android' ? 48 : 0,
     },
     header: {
       paddingHorizontal: 20,
