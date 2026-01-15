@@ -183,6 +183,7 @@ export default function RecordScreen() {
               placeholder="°F"
               placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
+              returnKeyType="done"
               inputAccessoryViewID={INPUT_ACCESSORY_VIEW_ID}
             />
           </View>
@@ -196,6 +197,7 @@ export default function RecordScreen() {
               placeholder="0-11"
               placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
+              returnKeyType="done"
               inputAccessoryViewID={INPUT_ACCESSORY_VIEW_ID}
             />
           </View>
@@ -211,6 +213,7 @@ export default function RecordScreen() {
               placeholder="Value"
               placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
+              returnKeyType="done"
               inputAccessoryViewID={INPUT_ACCESSORY_VIEW_ID}
             />
           </View>
@@ -224,6 +227,7 @@ export default function RecordScreen() {
               placeholder="Value"
               placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
+              returnKeyType="done"
               inputAccessoryViewID={INPUT_ACCESSORY_VIEW_ID}
             />
           </View>
@@ -239,6 +243,7 @@ export default function RecordScreen() {
               placeholder="Value"
               placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
+              returnKeyType="done"
               inputAccessoryViewID={INPUT_ACCESSORY_VIEW_ID}
             />
           </View>
@@ -252,6 +257,7 @@ export default function RecordScreen() {
               placeholder="Value"
               placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
+              returnKeyType="done"
               inputAccessoryViewID={INPUT_ACCESSORY_VIEW_ID}
             />
           </View>
@@ -265,6 +271,7 @@ export default function RecordScreen() {
             onChangeText={(text) => setLane({ ...lane, shine: text })}
             placeholder="Value"
             placeholderTextColor={colors.textSecondary}
+            returnKeyType="done"
             inputAccessoryViewID={INPUT_ACCESSORY_VIEW_ID}
           />
         </View>
@@ -279,6 +286,7 @@ export default function RecordScreen() {
             placeholderTextColor={colors.textSecondary}
             multiline
             numberOfLines={3}
+            returnKeyType="done"
             inputAccessoryViewID={INPUT_ACCESSORY_VIEW_ID}
           />
         </View>
@@ -464,6 +472,8 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
     },
     contentContainer: {
       padding: 20,
+      // Add extra bottom padding to ensure content is fully scrollable above the FloatingTabBar
+      paddingBottom: 140,
     },
     trackSelector: {
       marginBottom: 24,

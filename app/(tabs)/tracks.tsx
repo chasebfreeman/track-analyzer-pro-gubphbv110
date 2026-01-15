@@ -145,6 +145,7 @@ export default function TracksScreen() {
               placeholderTextColor={colors.textSecondary}
               value={newTrackName}
               onChangeText={setNewTrackName}
+              returnKeyType="next"
             />
             <TextInput
               style={styles.input}
@@ -152,6 +153,7 @@ export default function TracksScreen() {
               placeholderTextColor={colors.textSecondary}
               value={newTrackLocation}
               onChangeText={setNewTrackLocation}
+              returnKeyType="done"
             />
             <TouchableOpacity style={styles.saveButton} onPress={handleAddTrack}>
               <Text style={styles.saveButtonText}>Add Track</Text>
@@ -339,8 +341,8 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
     tracksListContent: {
       padding: 20,
       gap: 12,
-      // Add extra bottom padding to ensure last track is fully accessible above the tab bar
-      paddingBottom: 120,
+      // Add extra bottom padding to ensure last track is fully accessible above the FloatingTabBar
+      paddingBottom: 140,
     },
     trackCard: {
       flexDirection: 'row',

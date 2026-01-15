@@ -476,6 +476,8 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
     },
     readingsListContent: {
       padding: 20,
+      // Add extra bottom padding to ensure content is fully scrollable above the FloatingTabBar
+      paddingBottom: 140,
     },
     dayGroup: {
       marginBottom: 16,

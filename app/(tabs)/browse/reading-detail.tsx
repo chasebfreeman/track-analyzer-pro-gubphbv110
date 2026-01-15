@@ -279,6 +279,8 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
     },
     contentContainer: {
       padding: 20,
+      // Add extra bottom padding to ensure content is fully scrollable above the FloatingTabBar
+      paddingBottom: 140,
     },
     infoCard: {
       backgroundColor: colors.card,
