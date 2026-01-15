@@ -205,7 +205,7 @@ export default function TracksScreen() {
           }
         >
           {filteredTracks.length === 0 ? (
-            <View style={styles.emptyState}>
+            <View key="empty-state" style={styles.emptyState}>
               <IconSymbol
                 ios_icon_name="flag.checkered"
                 android_material_icon_name="sports-score"
@@ -216,32 +216,34 @@ export default function TracksScreen() {
               <Text style={styles.emptyStateSubtext}>Tap the + button to add your first track</Text>
             </View>
           ) : (
-            filteredTracks.map((track, trackIndex) => (
-              <TouchableOpacity
-                key={`track-${track.id}-${trackIndex}`}
-                style={styles.trackCard}
-                onPress={() => handleTrackPress(track)}
-              >
-                <View style={styles.trackIcon}>
+            <React.Fragment>
+              {filteredTracks.map((track, trackIndex) => (
+                <TouchableOpacity
+                  key={`track-${track.id}-${trackIndex}`}
+                  style={styles.trackCard}
+                  onPress={() => handleTrackPress(track)}
+                >
+                  <View style={styles.trackIcon}>
+                    <IconSymbol
+                      ios_icon_name="flag.checkered"
+                      android_material_icon_name="sports-score"
+                      size={32}
+                      color={colors.primary}
+                    />
+                  </View>
+                  <View style={styles.trackInfo}>
+                    <Text style={styles.trackName}>{track.name}</Text>
+                    <Text style={styles.trackLocation}>{track.location}</Text>
+                  </View>
                   <IconSymbol
-                    ios_icon_name="flag.checkered"
-                    android_material_icon_name="sports-score"
-                    size={32}
-                    color={colors.primary}
+                    ios_icon_name="chevron.right"
+                    android_material_icon_name="arrow-forward"
+                    size={20}
+                    color={colors.textSecondary}
                   />
-                </View>
-                <View style={styles.trackInfo}>
-                  <Text style={styles.trackName}>{track.name}</Text>
-                  <Text style={styles.trackLocation}>{track.location}</Text>
-                </View>
-                <IconSymbol
-                  ios_icon_name="chevron.right"
-                  android_material_icon_name="arrow-forward"
-                  size={20}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-            ))
+                </TouchableOpacity>
+              ))}
+            </React.Fragment>
           )}
         </ScrollView>
       </SafeAreaView>
