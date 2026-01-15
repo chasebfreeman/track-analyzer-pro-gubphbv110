@@ -36,6 +36,8 @@ export default function RecordScreen() {
   const [rightLane, setRightLane] = useState<LaneReading>(getEmptyLaneReading());
   const [isSaving, setIsSaving] = useState(false);
   const [showTrackDropdown, setShowTrackDropdown] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingReadingId, setEditingReadingId] = useState<string | null>(null);
 
   function getEmptyLaneReading(): LaneReading {
     return {
@@ -67,6 +69,45 @@ export default function RecordScreen() {
       }
     }
   }, [params.trackId]);
+
+  // Load edit mode data from params
+  useEffect(() => {
+    if (params.editMode === 'true' && params.readingId) {
+      console.log('Edit mode activated for reading:', params.readingId);
+      setIsEditMode(true);
+      setEditingReadingId(params.readingId as string);
+
+      // Pre-fill left lane data
+      setLeftLane({
+        trackTemp: (params.leftTrackTemp as string) || '',
+        uvIndex: (params.leftUvIndex as string) || '',
+        kegSL: (params.leftKegSL as string) || '',
+        kegOut: (params.leftKegOut as string) || '',
+        grippoSL: (params.leftGrippoSL as string) || '',
+        grippoOut: (params.leftGrippoOut as string) || '',
+        shine: (params.leftShine as string) || '',
+        notes: (params.leftNotes as string) || '',
+        imageUri: (params.leftImageUri as string) || undefined,
+      });
+
+      // Pre-fill right lane data
+      setRightLane({
+        trackTemp: (params.rightTrackTemp as string) || '',
+        uvIndex: (params.rightUvIndex as string) || '',
+        kegSL: (params.rightKegSL as string) || '',
+        kegOut: (params.rightKegOut as string) || '',
+        grippoSL: (params.rightGrippoSL as string) || '',
+        grippoOut: (params.rightGrippoOut as string) || '',
+        shine: (params.rightShine as string) || '',
+        notes: (params.rightNotes as string) || '',
+        imageUri: (params.rightImageUri as string) || undefined,
+      });
+    } else {
+      // Reset to new reading mode
+      setIsEditMode(false);
+      setEditingReadingId(null);
+    }
+  }, [params]);
 
   useFocusEffect(
     useCallback(() => {
@@ -115,45 +156,76 @@ export default function RecordScreen() {
 
     setIsSaving(true);
 
-    const now = new Date();
-    const reading = {
-      trackId: selectedTrack.id,
-      date: now.toISOString().split('T')[0],
-      time: now.toTimeString().split(' ')[0],
-      timestamp: now.getTime(),
-      year: now.getFullYear(),
-      leftLane,
-      rightLane,
-    };
+    if (isEditMode && editingReadingId) {
+      // Update existing reading
+      console.log('Updating reading:', editingReadingId);
+      
+      const success = await SupabaseStorageService.updateReading(editingReadingId, {
+        leftLane,
+        rightLane,
+      });
 
-    console.log('Saving reading:', reading);
+      setIsSaving(false);
 
-    const savedReading = await SupabaseStorageService.createReading(reading);
-
-    setIsSaving(false);
-
-    if (savedReading) {
-      console.log('Reading saved successfully');
-      Alert.alert('Success', 'Reading saved successfully', [
-        {
-          text: 'OK',
-          onPress: () => {
-            setLeftLane(getEmptyLaneReading());
-            setRightLane(getEmptyLaneReading());
-            Keyboard.dismiss();
+      if (success) {
+        console.log('Reading updated successfully');
+        Alert.alert('Success', 'Reading updated successfully', [
+          {
+            text: 'OK',
+            onPress: () => {
+              router.back();
+            },
           },
-        },
-      ]);
+        ]);
+      } else {
+        Alert.alert('Error', 'Failed to update reading');
+      }
     } else {
-      Alert.alert('Error', 'Failed to save reading');
+      // Create new reading
+      const now = new Date();
+      const reading = {
+        trackId: selectedTrack.id,
+        date: now.toISOString().split('T')[0],
+        time: now.toTimeString().split(' ')[0],
+        timestamp: now.getTime(),
+        year: now.getFullYear(),
+        leftLane,
+        rightLane,
+      };
+
+      console.log('Saving new reading:', reading);
+
+      const savedReading = await SupabaseStorageService.createReading(reading);
+
+      setIsSaving(false);
+
+      if (savedReading) {
+        console.log('Reading saved successfully');
+        Alert.alert('Success', 'Reading saved successfully', [
+          {
+            text: 'OK',
+            onPress: () => {
+              setLeftLane(getEmptyLaneReading());
+              setRightLane(getEmptyLaneReading());
+              Keyboard.dismiss();
+            },
+          },
+        ]);
+      } else {
+        Alert.alert('Error', 'Failed to save reading');
+      }
     }
   };
 
   const handleCancel = () => {
     console.log('User tapped Cancel button');
-    setLeftLane(getEmptyLaneReading());
-    setRightLane(getEmptyLaneReading());
-    Keyboard.dismiss();
+    if (isEditMode) {
+      router.back();
+    } else {
+      setLeftLane(getEmptyLaneReading());
+      setRightLane(getEmptyLaneReading());
+      Keyboard.dismiss();
+    }
   };
 
   const handleTrackSelect = (track: Track) => {
@@ -311,7 +383,9 @@ export default function RecordScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Record Reading</Text>
+          <Text style={styles.headerTitle}>
+            {isEditMode ? 'Edit Reading' : 'Record Reading'}
+          </Text>
         </View>
 
         <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
@@ -323,16 +397,19 @@ export default function RecordScreen() {
                 console.log('User tapped track dropdown');
                 setShowTrackDropdown(true);
               }}
+              disabled={isEditMode}
             >
               <Text style={styles.dropdownButtonText}>
                 {selectedTrack ? selectedTrack.name : 'Choose a track...'}
               </Text>
-              <IconSymbol
-                ios_icon_name="chevron.down"
-                android_material_icon_name="arrow-downward"
-                size={20}
-                color={colors.text}
-              />
+              {!isEditMode && (
+                <IconSymbol
+                  ios_icon_name="chevron.down"
+                  android_material_icon_name="arrow-downward"
+                  size={20}
+                  color={colors.text}
+                />
+              )}
             </TouchableOpacity>
           </View>
 
@@ -356,7 +433,7 @@ export default function RecordScreen() {
                   disabled={isSaving}
                 >
                   <Text style={styles.saveButtonText}>
-                    {isSaving ? 'Saving...' : 'Save Reading'}
+                    {isSaving ? (isEditMode ? 'Updating...' : 'Saving...') : (isEditMode ? 'Update Reading' : 'Save Reading')}
                   </Text>
                 </TouchableOpacity>
               </View>

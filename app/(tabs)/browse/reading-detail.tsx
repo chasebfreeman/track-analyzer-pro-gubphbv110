@@ -55,6 +55,44 @@ export default function ReadingDetailScreen() {
     loadData();
   }, [loadData]);
 
+  const handleEdit = () => {
+    console.log('User tapped Edit button');
+    if (!reading || !track) return;
+
+    // Navigate to record screen with reading data for editing
+    router.push({
+      pathname: '/(tabs)/record',
+      params: {
+        editMode: 'true',
+        readingId: reading.id,
+        trackId: track.id,
+        trackName: track.name,
+        date: reading.date,
+        time: reading.time,
+        // Left lane data
+        leftTrackTemp: reading.leftLane.trackTemp || '',
+        leftUvIndex: reading.leftLane.uvIndex || '',
+        leftKegSL: reading.leftLane.kegSL || '',
+        leftKegOut: reading.leftLane.kegOut || '',
+        leftGrippoSL: reading.leftLane.grippoSL || '',
+        leftGrippoOut: reading.leftLane.grippoOut || '',
+        leftShine: reading.leftLane.shine || '',
+        leftNotes: reading.leftLane.notes || '',
+        leftImageUri: reading.leftLane.imageUri || '',
+        // Right lane data
+        rightTrackTemp: reading.rightLane.trackTemp || '',
+        rightUvIndex: reading.rightLane.uvIndex || '',
+        rightKegSL: reading.rightLane.kegSL || '',
+        rightKegOut: reading.rightLane.kegOut || '',
+        rightGrippoSL: reading.rightLane.grippoSL || '',
+        rightGrippoOut: reading.rightLane.grippoOut || '',
+        rightShine: reading.rightLane.shine || '',
+        rightNotes: reading.rightLane.notes || '',
+        rightImageUri: reading.rightLane.imageUri || '',
+      },
+    });
+  };
+
   const handleDelete = () => {
     console.log('User tapped Delete button');
     Alert.alert(
@@ -188,14 +226,24 @@ export default function ReadingDetailScreen() {
           />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Reading Details</Text>
-        <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-          <IconSymbol
-            ios_icon_name="trash"
-            android_material_icon_name="delete"
-            size={24}
-            color="#FF3B30"
-          />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={handleEdit} style={styles.editButton}>
+            <IconSymbol
+              ios_icon_name="pencil"
+              android_material_icon_name="edit"
+              size={24}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
+            <IconSymbol
+              ios_icon_name="trash"
+              android_material_icon_name="delete"
+              size={24}
+              color="#FF3B30"
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
@@ -262,11 +310,22 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
       fontWeight: 'bold',
       color: colors.text,
     },
+    headerActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    editButton: {
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
     deleteButton: {
       width: 40,
       height: 40,
       justifyContent: 'center',
-      alignItems: 'flex-end',
+      alignItems: 'center',
     },
     content: {
       flex: 1,
