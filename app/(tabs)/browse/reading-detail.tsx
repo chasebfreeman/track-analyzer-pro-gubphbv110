@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useThemeColors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -159,7 +160,7 @@ export default function ReadingDetailScreen() {
 
   if (!reading || !track) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <IconSymbol
@@ -171,12 +172,12 @@ export default function ReadingDetailScreen() {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Loading...</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <IconSymbol
@@ -233,7 +234,7 @@ export default function ReadingDetailScreen() {
         {renderLaneData(reading.leftLane, 'Left Lane')}
         {renderLaneData(reading.rightLane, 'Right Lane')}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -242,7 +243,6 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
     container: {
       flex: 1,
       backgroundColor: colors.background,
-      paddingTop: Platform.OS === 'android' ? 48 : 0,
     },
     header: {
       flexDirection: 'row',
