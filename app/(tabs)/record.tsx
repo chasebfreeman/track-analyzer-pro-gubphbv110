@@ -296,25 +296,30 @@ export default function RecordScreen() {
         <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
           <View style={styles.trackSelector}>
             <Text style={styles.sectionTitle}>Select Track</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.trackScrollContent}
+            >
               {tracks.map((track, trackIndex) => (
-                <TouchableOpacity
-                  key={`track-${track.id}-${trackIndex}`}
-                  style={[
-                    styles.trackChip,
-                    selectedTrack?.id === track.id && styles.trackChipActive,
-                  ]}
-                  onPress={() => handleTrackSelect(track)}
-                >
-                  <Text
+                <React.Fragment key={`track-${track.id}-${trackIndex}`}>
+                  <TouchableOpacity
                     style={[
-                      styles.trackChipText,
-                      selectedTrack?.id === track.id && styles.trackChipTextActive,
+                      styles.trackChip,
+                      selectedTrack?.id === track.id && styles.trackChipActive,
                     ]}
+                    onPress={() => handleTrackSelect(track)}
                   >
-                    {track.name}
-                  </Text>
-                </TouchableOpacity>
+                    <Text
+                      style={[
+                        styles.trackChipText,
+                        selectedTrack?.id === track.id && styles.trackChipTextActive,
+                      ]}
+                    >
+                      {track.name}
+                    </Text>
+                  </TouchableOpacity>
+                </React.Fragment>
               ))}
             </ScrollView>
           </View>
@@ -380,6 +385,9 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
       fontWeight: '600',
       color: colors.text,
       marginBottom: 12,
+    },
+    trackScrollContent: {
+      paddingRight: 20,
     },
     trackChip: {
       paddingHorizontal: 20,
