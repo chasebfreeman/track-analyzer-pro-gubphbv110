@@ -16,6 +16,8 @@ import { useThemeColors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { TrackReading, Track } from '@/types/TrackData';
 import { SupabaseStorageService } from '@/utils/supabaseStorage';
+import EnhancedDailyChart from '@/components/EnhancedDailyChart';
+import AIInsightsCard from '@/components/AIInsightsCard';
 
 export default function ReadingDetailScreen() {
   const colors = useThemeColors();
@@ -24,6 +26,7 @@ export default function ReadingDetailScreen() {
   
   const [reading, setReading] = useState<TrackReading | null>(null);
   const [track, setTrack] = useState<Track | null>(null);
+  const [dayReadings, setDayReadings] = useState<TrackReading[]>([]);
 
   const loadData = useCallback(async () => {
     console.log('Loading reading detail:', params.readingId);
@@ -48,6 +51,11 @@ export default function ReadingDetailScreen() {
     if (foundReading) {
       setReading(foundReading);
       console.log('Reading loaded:', foundReading.id);
+      
+      // Load all readings for the same day
+      const sameDayReadings = readings.filter(r => r.date === foundReading.date);
+      setDayReadings(sameDayReadings);
+      console.log('Loaded', sameDayReadings.length, 'readings for the same day');
     }
   }, [params.readingId, params.trackId]);
 
@@ -257,6 +265,20 @@ export default function ReadingDetailScreen() {
           )}
         </View>
 
+        {/* AI Insights Card */}
+        {dayReadings.length > 0 && (
+          <AIInsightsCard trackId={track.id} date={reading.date} />
+        )}
+
+        {/* Enhanced Daily Chart */}
+        {dayReadings.length > 1 && (
+          <EnhancedDailyChart
+            readings={dayReadings}
+            date={reading.date}
+            trackId={track.id}
+          />
+        )}
+
         {renderLaneData(reading.leftLane, 'Left Lane')}
         {renderLaneData(reading.rightLane, 'Right Lane')}
       </ScrollView>
@@ -303,7 +325,6 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
     },
     contentContainer: {
       padding: 20,
-      // Add extra bottom padding to ensure content is fully scrollable above the FloatingTabBar
       paddingBottom: 140,
     },
     infoCard: {

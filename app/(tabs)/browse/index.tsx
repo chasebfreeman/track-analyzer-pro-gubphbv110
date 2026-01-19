@@ -16,6 +16,8 @@ import { useThemeColors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { Track, TrackReading, DayReadings } from '@/types/TrackData';
 import { SupabaseStorageService } from '@/utils/supabaseStorage';
+import EnhancedDailyChart from '@/components/EnhancedDailyChart';
+import AIInsightsCard from '@/components/AIInsightsCard';
 
 export default function BrowseScreen() {
   const colors = useThemeColors();
@@ -150,7 +152,7 @@ export default function BrowseScreen() {
   const styles = getStyles(colors);
 
   return (
-    <>
+    <React.Fragment>
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
@@ -258,39 +260,56 @@ export default function BrowseScreen() {
                   </TouchableOpacity>
 
                   {expandedDays.has(day.date) && (
-                    <View style={styles.readingsContainer}>
-                      {day.readings.map((reading, readingIndex) => (
-                        <TouchableOpacity
-                          key={`reading-${reading.id}-${readingIndex}`}
-                          style={styles.readingCard}
-                          onPress={() => handleReadingPress(reading)}
-                        >
-                          <View style={styles.readingHeader}>
+                    <View style={styles.expandedContent}>
+                      {/* AI Insights Card */}
+                      {selectedTrack && day.readings.length > 0 && (
+                        <AIInsightsCard trackId={selectedTrack.id} date={day.date} />
+                      )}
+
+                      {/* Enhanced Daily Chart */}
+                      {selectedTrack && day.readings.length > 1 && (
+                        <EnhancedDailyChart
+                          readings={day.readings}
+                          date={day.date}
+                          trackId={selectedTrack.id}
+                        />
+                      )}
+
+                      {/* Individual Readings */}
+                      <View style={styles.readingsContainer}>
+                        {day.readings.map((reading, readingIndex) => (
+                          <TouchableOpacity
+                            key={`reading-${reading.id}-${readingIndex}`}
+                            style={styles.readingCard}
+                            onPress={() => handleReadingPress(reading)}
+                          >
+                            <View style={styles.readingHeader}>
+                              <IconSymbol
+                                ios_icon_name="clock"
+                                android_material_icon_name="access-time"
+                                size={16}
+                                color={colors.primary}
+                              />
+                              <Text style={styles.readingTime}>{reading.time}</Text>
+                            </View>
+                            <View style={styles.readingData}>
+                              <Text style={styles.readingDataText}>
+                                Left: {reading.leftLane.trackTemp}°F, UV {reading.leftLane.uvIndex}
+                              </Text>
+                              <Text style={styles.readingDataText}>
+                                Right: {reading.rightLane.trackTemp}°F, UV {reading.rightLane.uvIndex}
+                              </Text>
+                            </View>
                             <IconSymbol
-                              ios_icon_name="clock"
-                              android_material_icon_name="access-time"
+                              ios_icon_name="chevron.right"
+                              android_material_icon_name="arrow-forward"
                               size={16}
-                              color={colors.primary}
+                              color={colors.textSecondary}
+                              style={styles.readingChevron}
                             />
-                            <Text style={styles.readingTime}>{reading.time}</Text>
-                          </View>
-                          <View style={styles.readingData}>
-                            <Text style={styles.readingDataText}>
-                              Left: {reading.leftLane.trackTemp}°F, UV {reading.leftLane.uvIndex}
-                            </Text>
-                            <Text style={styles.readingDataText}>
-                              Right: {reading.rightLane.trackTemp}°F, UV {reading.rightLane.uvIndex}
-                            </Text>
-                          </View>
-                          <IconSymbol
-                            ios_icon_name="chevron.right"
-                            android_material_icon_name="arrow-forward"
-                            size={16}
-                            color={colors.textSecondary}
-                            style={styles.readingChevron}
-                          />
-                        </TouchableOpacity>
-                      ))}
+                          </TouchableOpacity>
+                        ))}
+                      </View>
                     </View>
                   )}
                 </View>
@@ -356,7 +375,7 @@ export default function BrowseScreen() {
           </TouchableOpacity>
         </Modal>
       </SafeAreaView>
-    </>
+    </React.Fragment>
   );
 }
 
@@ -476,7 +495,6 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
     },
     readingsListContent: {
       padding: 20,
-      // Add extra bottom padding to ensure content is fully scrollable above the FloatingTabBar
       paddingBottom: 140,
     },
     dayGroup: {
@@ -499,6 +517,9 @@ function getStyles(colors: ReturnType<typeof useThemeColors>) {
       fontSize: 14,
       color: colors.textSecondary,
       marginTop: 4,
+    },
+    expandedContent: {
+      marginTop: 8,
     },
     readingsContainer: {
       marginTop: 8,
