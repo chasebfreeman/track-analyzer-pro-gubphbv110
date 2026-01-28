@@ -112,19 +112,18 @@ export default function RecordScreen() {
   };
 
   const formatTimeTo12Hour = (date: Date): string => {
-    let hours = date.getHours();
-    const minutes = date.getMinutes();
-    const seconds = date.getSeconds();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
 
-    hours = hours % 12;
-    hours = hours ? hours : 12;
+  hours = hours % 12;
+  hours = hours ? hours : 12;
 
-    const minutesStr = minutes < 10 ? '0' + minutes : minutes;
-    const secondsStr = seconds < 10 ? '0' + seconds : seconds;
+  const minutesStr = minutes < 10 ? '0' + minutes : minutes;
 
-    return `${hours}:${minutesStr}:${secondsStr} ${ampm}`;
-  };
+  return `${hours}:${minutesStr} ${ampm}`;
+};
+
 
   const handleSaveReading = async () => {
     console.log('User tapped Save Reading button');
