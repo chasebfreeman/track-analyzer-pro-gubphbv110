@@ -141,30 +141,29 @@ export class SupabaseStorageService {
       console.log('Fetched readings:', data?.length || 0);
 
       return (data || []).map((reading: any) => ({
-        id: reading.id,
-        trackId: reading.track_id,
+  id: reading.id,
+  trackId: reading.track_id,
 
-        // legacy (still okay to keep)
-        date: reading.date,
-        time: reading.time,
+  // legacy (still okay to keep)
+  date: reading.date,
+  time: reading.time,
 
-        // single source of truth
-        timestamp: Number(reading.timestamp),
-        year: reading.year,
+  // single source of truth
+  timestamp: Number(reading.timestamp),
+  year: reading.year,
 
-        session: reading.session,
-        pair: reading.pair,
-        classCurrentlyRunning: reading.class_currently_running ?? undefined,
+  session: reading.session ?? undefined,
+  pair: reading.pair ?? undefined,
+  classCurrentlyRunning: reading.class_currently_running ?? undefined,
 
-        leftLane: reading.left_lane as LaneReading,
-        rightLane: reading.right_lane as LaneReading,
+  leftLane: reading.left_lane as LaneReading,
+  rightLane: reading.right_lane as LaneReading,
 
-        // track-local forever (may be null on older rows)
-        timeZone: reading.time_zone ?? undefined,
-        trackDate: reading.track_date ?? undefined,
-        session: reading.session,
-        pair: reading.pair,
-      }));
+  // track-local forever (may be null on older rows)
+  timeZone: reading.time_zone ?? undefined,
+  trackDate: reading.track_date ?? undefined,
+}));
+
     } catch (error) {
       console.error('Exception fetching readings:', error);
       return [];
@@ -185,30 +184,29 @@ export class SupabaseStorageService {
       const { data, error } = await supabase
         .from('readings')
         .insert({
-          track_id: reading.trackId,
+  track_id: reading.trackId,
 
-          // legacy columns (we keep them aligned with track day)
-          date: reading.date,
-          time: reading.time,
+  // legacy columns (keep aligned with track day)
+  date: reading.date,
+  time: reading.time,
 
-          timestamp: reading.timestamp,
-          year: reading.year,
+  timestamp: reading.timestamp,
+  year: reading.year,
 
-          session: reading.session ?? null,
-          pair: reading.pair ?? null,
+  session: reading.session ?? null,
+  pair: reading.pair ?? null,
 
-          class_currently_running: reading.classCurrentlyRunning ?? null,
-          left_lane: reading.leftLane,
-          right_lane: reading.rightLane,
+  class_currently_running: reading.classCurrentlyRunning ?? null,
+  left_lane: reading.leftLane,
+  right_lane: reading.rightLane,
 
-          user_id: userData.user?.id,
+  user_id: userData.user?.id,
 
-          // new track-local forever columns
-          time_zone: reading.timeZone ?? null,
-          track_date: reading.trackDate ?? null,
-          session: reading.session,
-          pair: reading.pair,
-        })
+  // new track-local forever columns
+  time_zone: reading.timeZone ?? null,
+  track_date: reading.trackDate ?? null,
+})
+
         .select()
         .single();
 
