@@ -160,6 +160,9 @@ export class SupabaseStorageService {
         classCurrentlyRunning: reading.class_currently_running,
         leftLane: reading.left_lane as LaneReading,
         rightLane: reading.right_lane as LaneReading,
+        timeZone: reading.time_zone,
+        trackDate: reading.track_date,
+        timestamp: Number(reading.timestamp),
       }));
     } catch (error) {
       console.error('Exception fetching readings:', error);
