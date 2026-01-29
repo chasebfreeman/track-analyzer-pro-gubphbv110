@@ -1,4 +1,3 @@
-
 import { ExpoConfig } from 'expo/config';
 
 const config: ExpoConfig = {
