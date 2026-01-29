@@ -189,24 +189,25 @@ export class SupabaseStorageService {
       const { data: userData } = await supabase.auth.getUser();
 
       const { data, error } = await supabase
-        .from('readings')
-        .insert({
-          track_id: reading.trackId,
-          date: reading.date,
-          time: reading.time,
-          timestamp: reading.timestamp,
-          year: reading.year,
-          class_currently_running: reading.classCurrentlyRunning,
-          left_lane: reading.leftLane,
-          right_lane: reading.rightLane,
-          user_id: userData.user?.id,
+  .from('readings')
+  .insert({
+    track_id: reading.trackId,
+    date: reading.date,
+    time: reading.time,
+    timestamp: reading.timestamp,
+    year: reading.year,
+    class_currently_running: reading.classCurrentlyRunning,
+    left_lane: reading.leftLane,
+    right_lane: reading.rightLane,
+    user_id: userData.user?.id,
 
     // ✅ NEW
-          time_zone: (reading as any).timeZone,
-          track_date: (reading as any).trackDate
-        })
-        .select()
-        .single();
+    time_zone: reading.timeZone,
+    track_date: reading.trackDate,
+  })
+  .select()
+  .single();
+
 
       if (error) {
         console.error('Error creating reading:', error);
@@ -259,6 +260,9 @@ export class SupabaseStorageService {
       }
       if (updates.leftLane) updateData.left_lane = updates.leftLane;
       if (updates.rightLane) updateData.right_lane = updates.rightLane;
+      if (updates.timeZone) updateData.time_zone = updates.timeZone;
+      if (updates.trackDate) updateData.track_date = updates.trackDate;
+
 
       const { error } = await supabase
         .from('readings')
