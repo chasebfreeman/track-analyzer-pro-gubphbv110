@@ -162,6 +162,8 @@ export class SupabaseStorageService {
         // track-local forever (may be null on older rows)
         timeZone: reading.time_zone ?? undefined,
         trackDate: reading.track_date ?? undefined,
+        session: reading.session,
+        pair: reading.pair,
       }));
     } catch (error) {
       console.error('Exception fetching readings:', error);
@@ -204,6 +206,8 @@ export class SupabaseStorageService {
           // new track-local forever columns
           time_zone: reading.timeZone ?? null,
           track_date: reading.trackDate ?? null,
+          session: reading.session,
+          pair: reading.pair,
         })
         .select()
         .single();
