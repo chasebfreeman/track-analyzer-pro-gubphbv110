@@ -77,20 +77,20 @@ export default function BrowseScreen() {
   // 2) date (legacy, but we’re saving it as trackDate too)
   // 3) viewer-local fallback (very old/unknown rows)
   const getDayKey = (reading: TrackReading) => {
-    const r: any = reading as any;
-    return r.trackDate || reading.date || localDateKeyFromTimestamp(reading.timestamp);
-  };
+  return reading.trackDate || reading.date || localDateKeyFromTimestamp(reading.timestamp);
+};
+
 
   // ✅ Choose the correct time string to display:
   // 1) timestamp + timeZone (always track-local)
   // 2) reading.time (legacy)
   const getDisplayTime = (reading: TrackReading) => {
-    const r: any = reading as any;
-    if (r.timeZone && reading.timestamp) {
-      return formatTimeInTimeZone(reading.timestamp, r.timeZone);
-    }
-    return reading.time;
-  };
+  if (reading.timeZone && reading.timestamp) {
+    return formatTimeInTimeZone(reading.timestamp, reading.timeZone);
+  }
+  return reading.time;
+};
+
 
   // ---------- Data loading ----------
 
