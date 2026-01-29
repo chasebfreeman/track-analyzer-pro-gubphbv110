@@ -151,19 +151,26 @@ export class SupabaseStorageService {
       console.log('Fetched readings:', data?.length || 0);
 
       return (data || []).map((reading: any) => ({
-        id: reading.id,
-        trackId: reading.track_id,
-        date: reading.date,
-        time: reading.time,
-        timestamp: Number(reading.timestamp),
-        year: reading.year,
-        classCurrentlyRunning: reading.class_currently_running,
-        leftLane: reading.left_lane as LaneReading,
-        rightLane: reading.right_lane as LaneReading,
-        timeZone: reading.time_zone,
-        trackDate: reading.track_date,
-        timestamp: Number(reading.timestamp),
-      }));
+  id: reading.id,
+  trackId: reading.track_id,
+
+  // legacy (still okay to keep)
+  date: reading.date,
+  time: reading.time,
+
+  // ✅ single source of truth
+  timestamp: Number(reading.timestamp),
+
+  year: reading.year,
+  classCurrentlyRunning: reading.class_currently_running,
+  leftLane: reading.left_lane as LaneReading,
+  rightLane: reading.right_lane as LaneReading,
+
+  // ✅ NEW (track-local forever)
+  timeZone: reading.time_zone,
+  trackDate: reading.track_date,
+}));
+
     } catch (error) {
       console.error('Exception fetching readings:', error);
       return [];
@@ -185,18 +192,18 @@ export class SupabaseStorageService {
         .from('readings')
         .insert({
           track_id: reading.trackId,
-  date: reading.date,
-  time: reading.time,
-  timestamp: reading.timestamp,
-  year: reading.year,
-  class_currently_running: reading.classCurrentlyRunning,
-  left_lane: reading.leftLane,
-  right_lane: reading.rightLane,
-  user_id: userData.user?.id,
+          date: reading.date,
+          time: reading.time,
+          timestamp: reading.timestamp,
+          year: reading.year,
+          class_currently_running: reading.classCurrentlyRunning,
+          left_lane: reading.leftLane,
+          right_lane: reading.rightLane,
+          user_id: userData.user?.id,
 
-  // ✅ NEW
-  time_zone: (reading as any).timeZone,
-  track_date: (reading as any).trackDate
+    // ✅ NEW
+          time_zone: (reading as any).timeZone,
+          track_date: (reading as any).trackDate
         })
         .select()
         .single();
@@ -209,16 +216,23 @@ export class SupabaseStorageService {
       console.log('Reading created successfully:', data.id);
 
       return {
-        id: data.id,
-        trackId: data.track_id,
-        date: data.date,
-        time: data.time,
-        timestamp: Number(data.timestamp),
-        year: data.year,
-        classCurrentlyRunning: data.class_currently_running,
-        leftLane: data.left_lane as LaneReading,
-        rightLane: data.right_lane as LaneReading,
-      };
+  id: data.id,
+  trackId: data.track_id,
+
+  date: data.date,
+  time: data.time,
+  timestamp: Number(data.timestamp),
+
+  year: data.year,
+  classCurrentlyRunning: data.class_currently_running,
+  leftLane: data.left_lane as LaneReading,
+  rightLane: data.right_lane as LaneReading,
+
+  // ✅ NEW
+  timeZone: data.time_zone,
+  trackDate: data.track_date,
+};
+
     } catch (error) {
       console.error('Exception creating reading:', error);
       return null;
