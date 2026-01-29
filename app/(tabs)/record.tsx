@@ -87,6 +87,27 @@ export default function RecordScreen() {
     }
   };
 
+  // ✅ Track-local time string from timestamp + IANA timezone (no seconds)
+  const trackTimeString = (ms: number, timeZone: string) => {
+    try {
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }).format(new Date(ms));
+    } catch {
+      // fallback: device-local no seconds
+      const d = new Date(ms);
+      let hours = d.getHours();
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      return `${hours}:${minutes} ${ampm}`;
+    }
+  };
+
   const loadTracks = useCallback(async () => {
     console.log('Loading tracks for record screen');
     const allTracks = await SupabaseStorageService.getAllTracks();
@@ -139,19 +160,6 @@ export default function RecordScreen() {
     }
   };
 
-  // ✅ No seconds
-  const formatTimeTo12Hour = (date: Date): string => {
-    let hours = date.getHours();
-    const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-
-    const minutesStr = String(minutes).padStart(2, '0');
-    return `${hours}:${minutesStr} ${ampm}`;
-  };
-
   const handleSaveReading = async () => {
     console.log('User tapped Save Reading button');
 
@@ -163,17 +171,16 @@ export default function RecordScreen() {
     setIsSaving(true);
 
     try {
-      const now = new Date();
-      const ms = now.getTime();
+      const ms = Date.now();
 
       const timeZone = getDeviceTimeZone();
       const trackDate = trackDateString(ms, timeZone);
-      const time12Hour = formatTimeTo12Hour(now);
+      const time12Hour = trackTimeString(ms, timeZone);
 
       const reading: Omit<TrackReading, 'id'> = {
         trackId: selectedTrack.id,
 
-        // keep legacy fields aligned to track day
+        // keep legacy fields aligned to the SAME track-local day/time we store
         date: trackDate,
         time: time12Hour,
 
@@ -403,15 +410,8 @@ export default function RecordScreen() {
                 setShowTrackDropdown(true);
               }}
             >
-              <Text style={styles.dropdownButtonText}>
-                {selectedTrack ? selectedTrack.name : 'Choose a track...'}
-              </Text>
-              <IconSymbol
-                ios_icon_name="chevron.down"
-                android_material_icon_name="arrow-drop-down"
-                size={20}
-                color={colors.text}
-              />
+              <Text style={styles.dropdownButtonText}>{selectedTrack ? selectedTrack.name : 'Choose a track...'}</Text>
+              <IconSymbol ios_icon_name="chevron.down" android_material_icon_name="arrow-drop-down" size={20} color={colors.text} />
             </TouchableOpacity>
           </View>
 
@@ -457,11 +457,7 @@ export default function RecordScreen() {
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-                  onPress={handleSaveReading}
-                  disabled={isSaving}
-                >
+                <TouchableOpacity style={[styles.saveButton, isSaving && styles.saveButtonDisabled]} onPress={handleSaveReading} disabled={isSaving}>
                   <Text style={styles.saveButtonText}>{isSaving ? 'Saving...' : 'Save Reading'}</Text>
                 </TouchableOpacity>
               </View>
@@ -475,11 +471,7 @@ export default function RecordScreen() {
           animationType="fade"
           onRequestClose={() => setShowTrackDropdown(false)}
         >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setShowTrackDropdown(false)}
-          >
+          <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowTrackDropdown(false)}>
             <View style={styles.dropdownModal}>
               <View style={styles.dropdownHeader}>
                 <Text style={styles.dropdownTitle}>Select Track</Text>
@@ -494,12 +486,7 @@ export default function RecordScreen() {
                     style={[styles.dropdownItem, selectedTrack?.id === track.id && styles.dropdownItemActive]}
                     onPress={() => handleTrackSelect(track)}
                   >
-                    <Text
-                      style={[
-                        styles.dropdownItemText,
-                        selectedTrack?.id === track.id && styles.dropdownItemTextActive,
-                      ]}
-                    >
+                    <Text style={[styles.dropdownItemText, selectedTrack?.id === track.id && styles.dropdownItemTextActive]}>
                       {track.name}
                     </Text>
                     {selectedTrack?.id === track.id && (
