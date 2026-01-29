@@ -152,8 +152,8 @@ export class SupabaseStorageService {
         timestamp: Number(reading.timestamp),
         year: reading.year,
 
-        session: reading.session ?? undefined,
-        pair: reading.pair ?? undefined,
+        session: reading.session,
+        pair: reading.pair,
         classCurrentlyRunning: reading.class_currently_running ?? undefined,
 
         leftLane: reading.left_lane as LaneReading,
