@@ -1,4 +1,3 @@
-
 import { supabase, isSupabaseConfigured } from './supabase';
 import { Track, TrackReading, LaneReading } from '@/types/TrackData';
 
@@ -9,7 +8,7 @@ export class SupabaseStorageService {
 
   static async getAllTracks(): Promise<Track[]> {
     console.log('SupabaseStorageService: Fetching all tracks');
-    
+
     if (!isSupabaseConfigured()) {
       console.log('Supabase not configured');
       return [];
@@ -23,7 +22,6 @@ export class SupabaseStorageService {
 
       if (error) {
         console.error('Error fetching tracks:', error);
-        // If we get a policy error, it might be a temporary issue - return empty array
         if (error.code === '42P17') {
           console.log('RLS policy error detected - this should be fixed now. Please restart the app.');
         }
@@ -46,7 +44,7 @@ export class SupabaseStorageService {
 
   static async createTrack(name: string, location: string): Promise<Track | null> {
     console.log('SupabaseStorageService: Creating track:', name, location);
-    
+
     if (!isSupabaseConfigured()) {
       console.log('Supabase not configured');
       return null;
@@ -54,7 +52,7 @@ export class SupabaseStorageService {
 
     try {
       const { data: userData } = await supabase.auth.getUser();
-      
+
       const { data, error } = await supabase
         .from('tracks')
         .insert({
@@ -86,24 +84,16 @@ export class SupabaseStorageService {
 
   static async deleteTrack(trackId: string): Promise<boolean> {
     console.log('SupabaseStorageService: Deleting track:', trackId);
-    
+
     if (!isSupabaseConfigured()) {
       console.log('Supabase not configured');
       return false;
     }
 
     try {
-      // First delete all readings for this track
-      await supabase
-        .from('readings')
-        .delete()
-        .eq('track_id', trackId);
+      await supabase.from('readings').delete().eq('track_id', trackId);
 
-      // Then delete the track
-      const { error } = await supabase
-        .from('tracks')
-        .delete()
-        .eq('id', trackId);
+      const { error } = await supabase.from('tracks').delete().eq('id', trackId);
 
       if (error) {
         console.error('Error deleting track:', error);
@@ -124,7 +114,7 @@ export class SupabaseStorageService {
 
   static async getReadingsForTrack(trackId: string, year?: number): Promise<TrackReading[]> {
     console.log('SupabaseStorageService: Fetching readings for track:', trackId, 'year:', year);
-    
+
     if (!isSupabaseConfigured()) {
       console.log('Supabase not configured');
       return [];
@@ -151,26 +141,28 @@ export class SupabaseStorageService {
       console.log('Fetched readings:', data?.length || 0);
 
       return (data || []).map((reading: any) => ({
-  id: reading.id,
-  trackId: reading.track_id,
+        id: reading.id,
+        trackId: reading.track_id,
 
-  // legacy (still okay to keep)
-  date: reading.date,
-  time: reading.time,
+        // legacy (still okay to keep)
+        date: reading.date,
+        time: reading.time,
 
-  // ✅ single source of truth
-  timestamp: Number(reading.timestamp),
+        // single source of truth
+        timestamp: Number(reading.timestamp),
+        year: reading.year,
 
-  year: reading.year,
-  classCurrentlyRunning: reading.class_currently_running,
-  leftLane: reading.left_lane as LaneReading,
-  rightLane: reading.right_lane as LaneReading,
+        session: reading.session ?? undefined,
+        pair: reading.pair ?? undefined,
+        classCurrentlyRunning: reading.class_currently_running ?? undefined,
 
-  // ✅ NEW (track-local forever)
-  timeZone: reading.time_zone,
-  trackDate: reading.track_date,
-}));
+        leftLane: reading.left_lane as LaneReading,
+        rightLane: reading.right_lane as LaneReading,
 
+        // track-local forever (may be null on older rows)
+        timeZone: reading.time_zone ?? undefined,
+        trackDate: reading.track_date ?? undefined,
+      }));
     } catch (error) {
       console.error('Exception fetching readings:', error);
       return [];
@@ -179,7 +171,7 @@ export class SupabaseStorageService {
 
   static async createReading(reading: Omit<TrackReading, 'id'>): Promise<TrackReading | null> {
     console.log('SupabaseStorageService: Creating reading for track:', reading.trackId);
-    
+
     if (!isSupabaseConfigured()) {
       console.log('Supabase not configured');
       return null;
@@ -189,25 +181,32 @@ export class SupabaseStorageService {
       const { data: userData } = await supabase.auth.getUser();
 
       const { data, error } = await supabase
-  .from('readings')
-  .insert({
-    track_id: reading.trackId,
-    date: reading.date,
-    time: reading.time,
-    timestamp: reading.timestamp,
-    year: reading.year,
-    class_currently_running: reading.classCurrentlyRunning,
-    left_lane: reading.leftLane,
-    right_lane: reading.rightLane,
-    user_id: userData.user?.id,
+        .from('readings')
+        .insert({
+          track_id: reading.trackId,
 
-    // ✅ NEW
-    time_zone: reading.timeZone,
-    track_date: reading.trackDate,
-  })
-  .select()
-  .single();
+          // legacy columns (we keep them aligned with track day)
+          date: reading.date,
+          time: reading.time,
 
+          timestamp: reading.timestamp,
+          year: reading.year,
+
+          session: reading.session ?? null,
+          pair: reading.pair ?? null,
+
+          class_currently_running: reading.classCurrentlyRunning ?? null,
+          left_lane: reading.leftLane,
+          right_lane: reading.rightLane,
+
+          user_id: userData.user?.id,
+
+          // new track-local forever columns
+          time_zone: reading.timeZone ?? null,
+          track_date: reading.trackDate ?? null,
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error('Error creating reading:', error);
@@ -217,23 +216,25 @@ export class SupabaseStorageService {
       console.log('Reading created successfully:', data.id);
 
       return {
-  id: data.id,
-  trackId: data.track_id,
+        id: data.id,
+        trackId: data.track_id,
 
-  date: data.date,
-  time: data.time,
-  timestamp: Number(data.timestamp),
+        date: data.date,
+        time: data.time,
 
-  year: data.year,
-  classCurrentlyRunning: data.class_currently_running,
-  leftLane: data.left_lane as LaneReading,
-  rightLane: data.right_lane as LaneReading,
+        timestamp: Number(data.timestamp),
+        year: data.year,
 
-  // ✅ NEW
-  timeZone: data.time_zone,
-  trackDate: data.track_date,
-};
+        session: data.session ?? undefined,
+        pair: data.pair ?? undefined,
+        classCurrentlyRunning: data.class_currently_running ?? undefined,
 
+        leftLane: data.left_lane as LaneReading,
+        rightLane: data.right_lane as LaneReading,
+
+        timeZone: data.time_zone ?? undefined,
+        trackDate: data.track_date ?? undefined,
+      };
     } catch (error) {
       console.error('Exception creating reading:', error);
       return null;
@@ -242,7 +243,7 @@ export class SupabaseStorageService {
 
   static async updateReading(readingId: string, updates: Partial<TrackReading>): Promise<boolean> {
     console.log('SupabaseStorageService: Updating reading:', readingId);
-    
+
     if (!isSupabaseConfigured()) {
       console.log('Supabase not configured');
       return false;
@@ -250,24 +251,25 @@ export class SupabaseStorageService {
 
     try {
       const updateData: any = {};
-      
+
       if (updates.date) updateData.date = updates.date;
       if (updates.time) updateData.time = updates.time;
       if (updates.timestamp) updateData.timestamp = updates.timestamp;
       if (updates.year) updateData.year = updates.year;
+
+      if (updates.session !== undefined) updateData.session = updates.session;
+      if (updates.pair !== undefined) updateData.pair = updates.pair;
+
       if (updates.classCurrentlyRunning !== undefined) {
         updateData.class_currently_running = updates.classCurrentlyRunning;
       }
       if (updates.leftLane) updateData.left_lane = updates.leftLane;
       if (updates.rightLane) updateData.right_lane = updates.rightLane;
-      if (updates.timeZone) updateData.time_zone = updates.timeZone;
-      if (updates.trackDate) updateData.track_date = updates.trackDate;
 
+      if (updates.timeZone !== undefined) updateData.time_zone = updates.timeZone;
+      if (updates.trackDate !== undefined) updateData.track_date = updates.trackDate;
 
-      const { error } = await supabase
-        .from('readings')
-        .update(updateData)
-        .eq('id', readingId);
+      const { error } = await supabase.from('readings').update(updateData).eq('id', readingId);
 
       if (error) {
         console.error('Error updating reading:', error);
@@ -284,17 +286,14 @@ export class SupabaseStorageService {
 
   static async deleteReading(readingId: string): Promise<boolean> {
     console.log('SupabaseStorageService: Deleting reading:', readingId);
-    
+
     if (!isSupabaseConfigured()) {
       console.log('Supabase not configured');
       return false;
     }
 
     try {
-      const { error } = await supabase
-        .from('readings')
-        .delete()
-        .eq('id', readingId);
+      const { error } = await supabase.from('readings').delete().eq('id', readingId);
 
       if (error) {
         console.error('Error deleting reading:', error);
@@ -315,16 +314,14 @@ export class SupabaseStorageService {
 
   static async getAvailableYears(trackId?: string): Promise<number[]> {
     console.log('SupabaseStorageService: Fetching available years for track:', trackId);
-    
+
     if (!isSupabaseConfigured()) {
       console.log('Supabase not configured');
       return [];
     }
 
     try {
-      let query = supabase
-        .from('readings')
-        .select('year');
+      let query = supabase.from('readings').select('year');
 
       if (trackId) {
         query = query.eq('track_id', trackId);
@@ -334,14 +331,16 @@ export class SupabaseStorageService {
 
       if (error) {
         console.error('Error fetching years:', error);
-        // If we get a policy error, it might be a temporary issue - return empty array
         if (error.code === '42P17') {
           console.log('RLS policy error detected - this should be fixed now. Please restart the app.');
         }
         return [];
       }
 
-      const years = [...new Set((data || []).map((r: any) => r.year))].sort((a, b) => b - a);
+      const years = [...new Set((data || []).map((r: any) => r.year))]
+        .filter((y) => typeof y === 'number')
+        .sort((a, b) => b - a);
+
       console.log('Available years:', years);
       return years;
     } catch (error) {
@@ -356,16 +355,13 @@ export class SupabaseStorageService {
 
   static async uploadImage(uri: string, trackId: string, lane: 'left' | 'right'): Promise<string | null> {
     console.log('SupabaseStorageService: Uploading image for track:', trackId, 'lane:', lane);
-    
+
     if (!isSupabaseConfigured()) {
       console.log('Supabase not configured');
       return null;
     }
 
     try {
-      // For now, we'll store the local URI
-      // In a production app, you'd upload to Supabase Storage
-      // and return the public URL
       console.log('Image stored locally:', uri);
       return uri;
     } catch (error) {
