@@ -13,28 +13,21 @@ export interface LaneReading {
 export interface TrackReading {
   id: string;
   trackId: string;
-
-  // Legacy / display-friendly fields (kept for backward compat)
-  date: string;      // YYYY-MM-DD (we now set this to trackDate when saving)
-  time: string;      // "h:mm AM/PM" (legacy; for old rows)
-
-  // Canonical absolute time (always correct)
+  date: string;
+  time: string;
   timestamp: number;
-
-  // Filtering convenience (we now derive this from trackDate)
   year: number;
-
   session?: string;
   pair?: string;
   classCurrentlyRunning?: string;
-
   leftLane: LaneReading;
   rightLane: LaneReading;
 
-  // ✅ NEW (optional so old rows don’t break)
-  timeZone?: string;   // IANA tz like "America/New_York"
-  trackDate?: string;  // YYYY-MM-DD in track-local calendar date
+  // ✅ NEW
+  timeZone?: string;
+  trackDate?: string;
 }
+
 
 export interface Track {
   id: string;
