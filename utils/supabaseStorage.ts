@@ -1,7 +1,55 @@
+// utils/supabaseStorage.ts
+
 import { supabase, isSupabaseConfigured } from './supabase';
 import { Track, TrackReading, LaneReading } from '@/types/TrackData';
 
 export class SupabaseStorageService {
+  // ============================================
+  // TRACK-LOCAL DATE/TIME HELPERS (no extra deps)
+  // ============================================
+
+  private static safeNumber(value: any): number | null {
+    const n = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  private static getTrackDateFromTimestamp(ms: number, timeZone: string): string {
+    // returns YYYY-MM-DD
+    try {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).formatToParts(new Date(ms));
+
+      const y = parts.find((p) => p.type === 'year')?.value ?? '0000';
+      const m = parts.find((p) => p.type === 'month')?.value ?? '00';
+      const d = parts.find((p) => p.type === 'day')?.value ?? '00';
+      return `${y}-${m}-${d}`;
+    } catch {
+      // fallback: device-local
+      const d = new Date(ms);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+  }
+
+  private static getYearFromTrackDate(trackDate: string | undefined, ms: number | null): number | undefined {
+    // Prefer trackDate’s year so it matches the “track-local forever” intent
+    if (trackDate && trackDate.length >= 4) {
+      const y = Number(trackDate.slice(0, 4));
+      if (Number.isFinite(y)) return y;
+    }
+    if (ms !== null) {
+      const y = new Date(ms).getFullYear();
+      if (Number.isFinite(y)) return y;
+    }
+    return undefined;
+  }
+
   // ============================================
   // TRACKS
   // ============================================
@@ -15,10 +63,7 @@ export class SupabaseStorageService {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('tracks')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('tracks').select('*').order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching tracks:', error);
@@ -121,13 +166,9 @@ export class SupabaseStorageService {
     }
 
     try {
-      let query = supabase
-        .from('readings')
-        .select('*')
-        .eq('track_id', trackId)
-        .order('timestamp', { ascending: false });
+      let query = supabase.from('readings').select('*').eq('track_id', trackId).order('timestamp', { ascending: false });
 
-      if (year) {
+      if (year !== undefined) {
         query = query.eq('year', year);
       }
 
@@ -140,30 +181,42 @@ export class SupabaseStorageService {
 
       console.log('Fetched readings:', data?.length || 0);
 
-      return (data || []).map((reading: any) => ({
-  id: reading.id,
-  trackId: reading.track_id,
+      return (data || []).map((reading: any) => {
+        const ts = this.safeNumber(reading.timestamp);
+        const timeZone: string | undefined = reading.time_zone ?? undefined;
 
-  // legacy (still okay to keep)
-  date: reading.date,
-  time: reading.time,
+        // Prefer DB track_date. Fallback to legacy date. If both missing but timestamp exists, compute.
+        const trackDate: string | undefined =
+          reading.track_date ?? reading.date ?? (ts !== null ? this.getTrackDateFromTimestamp(ts, timeZone ?? 'UTC') : undefined);
 
-  // single source of truth
-  timestamp: Number(reading.timestamp),
-  year: reading.year,
+        // Prefer DB year. Else derive from trackDate (preferred) or timestamp.
+        const dbYear = this.safeNumber(reading.year);
+        const derivedYear = dbYear ?? this.getYearFromTrackDate(trackDate, ts);
 
-  session: reading.session ?? undefined,
-  pair: reading.pair ?? undefined,
-  classCurrentlyRunning: reading.class_currently_running ?? undefined,
+        return {
+          id: reading.id,
+          trackId: reading.track_id,
 
-  leftLane: reading.left_lane as LaneReading,
-  rightLane: reading.right_lane as LaneReading,
+          // legacy (kept for compatibility / old UI)
+          date: reading.date ?? trackDate ?? '',
+          time: reading.time ?? '',
 
-  // track-local forever (may be null on older rows)
-  timeZone: reading.time_zone ?? undefined,
-  trackDate: reading.track_date ?? undefined,
-}));
+          // single source of truth
+          timestamp: ts ?? 0,
+          year: derivedYear ?? 0,
 
+          session: reading.session ?? undefined,
+          pair: reading.pair ?? undefined,
+          classCurrentlyRunning: reading.class_currently_running ?? undefined,
+
+          leftLane: reading.left_lane as LaneReading,
+          rightLane: reading.right_lane as LaneReading,
+
+          // track-local forever
+          timeZone,
+          trackDate,
+        };
+      });
     } catch (error) {
       console.error('Exception fetching readings:', error);
       return [];
@@ -181,32 +234,34 @@ export class SupabaseStorageService {
     try {
       const { data: userData } = await supabase.auth.getUser();
 
+      const timestamp = Math.trunc(reading.timestamp); // keep bigint ms clean
+
       const { data, error } = await supabase
         .from('readings')
         .insert({
-  track_id: reading.trackId,
+          track_id: reading.trackId,
 
-  // legacy columns (keep aligned with track day)
-  date: reading.date,
-  time: reading.time,
+          // legacy columns (kept aligned with track day)
+          date: reading.date,
+          time: reading.time,
 
-  timestamp: reading.timestamp,
-  year: reading.year,
+          // source of truth
+          timestamp,
+          year: reading.year,
 
-  session: reading.session ?? null,
-  pair: reading.pair ?? null,
+          session: reading.session ?? null,
+          pair: reading.pair ?? null,
 
-  class_currently_running: reading.classCurrentlyRunning ?? null,
-  left_lane: reading.leftLane,
-  right_lane: reading.rightLane,
+          class_currently_running: reading.classCurrentlyRunning ?? null,
+          left_lane: reading.leftLane,
+          right_lane: reading.rightLane,
 
-  user_id: userData.user?.id,
+          user_id: userData.user?.id,
 
-  // new track-local forever columns
-  time_zone: reading.timeZone ?? null,
-  track_date: reading.trackDate ?? null,
-})
-
+          // track-local forever
+          time_zone: reading.timeZone ?? null,
+          track_date: reading.trackDate ?? null,
+        })
         .select()
         .single();
 
@@ -217,6 +272,8 @@ export class SupabaseStorageService {
 
       console.log('Reading created successfully:', data.id);
 
+      const ts = this.safeNumber(data.timestamp) ?? timestamp;
+
       return {
         id: data.id,
         trackId: data.track_id,
@@ -224,8 +281,8 @@ export class SupabaseStorageService {
         date: data.date,
         time: data.time,
 
-        timestamp: Number(data.timestamp),
-        year: data.year,
+        timestamp: ts,
+        year: this.safeNumber(data.year) ?? reading.year,
 
         session: data.session ?? undefined,
         pair: data.pair ?? undefined,
@@ -254,10 +311,10 @@ export class SupabaseStorageService {
     try {
       const updateData: any = {};
 
-      if (updates.date) updateData.date = updates.date;
-      if (updates.time) updateData.time = updates.time;
-      if (updates.timestamp) updateData.timestamp = updates.timestamp;
-      if (updates.year) updateData.year = updates.year;
+      if (updates.date !== undefined) updateData.date = updates.date;
+      if (updates.time !== undefined) updateData.time = updates.time;
+      if (updates.timestamp !== undefined) updateData.timestamp = Math.trunc(updates.timestamp);
+      if (updates.year !== undefined) updateData.year = updates.year;
 
       if (updates.session !== undefined) updateData.session = updates.session;
       if (updates.pair !== undefined) updateData.pair = updates.pair;
@@ -265,8 +322,8 @@ export class SupabaseStorageService {
       if (updates.classCurrentlyRunning !== undefined) {
         updateData.class_currently_running = updates.classCurrentlyRunning;
       }
-      if (updates.leftLane) updateData.left_lane = updates.leftLane;
-      if (updates.rightLane) updateData.right_lane = updates.rightLane;
+      if (updates.leftLane !== undefined) updateData.left_lane = updates.leftLane;
+      if (updates.rightLane !== undefined) updateData.right_lane = updates.rightLane;
 
       if (updates.timeZone !== undefined) updateData.time_zone = updates.timeZone;
       if (updates.trackDate !== undefined) updateData.track_date = updates.trackDate;
@@ -339,8 +396,8 @@ export class SupabaseStorageService {
         return [];
       }
 
-      const years = [...new Set((data || []).map((r: any) => r.year))]
-        .filter((y) => typeof y === 'number')
+      const years = [...new Set((data || []).map((r: any) => Number(r.year)))]
+        .filter((y) => Number.isFinite(y))
         .sort((a, b) => b - a);
 
       console.log('Available years:', years);
