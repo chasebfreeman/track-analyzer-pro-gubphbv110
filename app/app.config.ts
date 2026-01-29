@@ -1,14 +1,8 @@
 import { ExpoConfig } from 'expo/config';
 
-export default (): ExpoConfig => ({
+const config: ExpoConfig = {
   name: 'Track Analyzer',
   slug: 'track-analyzer',
-  extra: {
-    // optional legacy usage
-  },
-});
-export default {
-  name: 'Track Analyzer',
-  slug: 'track-analyzer',
-  extra: {},
 };
+
+export default config;
