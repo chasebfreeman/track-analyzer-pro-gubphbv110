@@ -182,14 +182,18 @@ export class SupabaseStorageService {
         .from('readings')
         .insert({
           track_id: reading.trackId,
-          date: reading.date,
-          time: reading.time,
-          timestamp: reading.timestamp,
-          year: reading.year,
-          class_currently_running: reading.classCurrentlyRunning,
-          left_lane: reading.leftLane,
-          right_lane: reading.rightLane,
-          user_id: userData.user?.id,
+  date: reading.date,
+  time: reading.time,
+  timestamp: reading.timestamp,
+  year: reading.year,
+  class_currently_running: reading.classCurrentlyRunning,
+  left_lane: reading.leftLane,
+  right_lane: reading.rightLane,
+  user_id: userData.user?.id,
+
+  // ✅ NEW
+  time_zone: (reading as any).timeZone,
+  track_date: (reading as any).trackDate
         })
         .select()
         .single();
