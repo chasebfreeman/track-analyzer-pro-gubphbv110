@@ -7,7 +7,7 @@ const config: ExpoConfig = {
   ios: {
     bundleIdentifier: "com.cfreeman4798.trackanalyzerpro",
     supportsTablet: true,
-    deviceFamily: ["iphone", "ipad"],   // ← permanent safeguard
+    isTabletOnly: false, // ✅ ensures iPhone support is never dropped
   },
 
   extra: {

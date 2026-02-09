@@ -18,17 +18,19 @@
       "backgroundColor": "#000000"
     },
     "ios": {
-      "supportsTablet": true,
-      "deviceFamily": ["iphone", "ipad"],
-      "bundleIdentifier": "com.cfreeman4798.trackanalyzerpro",
-      "icon": "./assets/images/5e70b68d-599b-4288-ba74-b6cfc68a07b0.png",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to upload track lane photos.",
-        "NSCameraUsageDescription": "This app needs access to your camera to take photos of track lanes."
-      },
-      "buildNumber": "30"
-    },
+  "supportsTablet": true,
+  "isTabletOnly": false,
+  "bundleIdentifier": "com.cfreeman4798.trackanalyzerpro",
+  "icon": "./assets/images/5e70b68d-599b-4288-ba74-b6cfc68a07b0.png",
+  "infoPlist": {
+    "ITSAppUsesNonExemptEncryption": false,
+    "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to upload track lane photos.",
+    "NSCameraUsageDescription": "This app needs access to your camera to take photos of track lanes."
+  },
+  "buildNumber": "30"
+},
+
+
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/5e70b68d-599b-4288-ba74-b6cfc68a07b0.png",
