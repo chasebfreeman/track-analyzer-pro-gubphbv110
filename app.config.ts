@@ -1,32 +1,25 @@
-import type { ExpoConfig } from "expo/config";
+import type { ExpoConfig, ConfigContext } from "expo/config";
 
-const config: ExpoConfig = {
+export default ({ config }: ConfigContext): ExpoConfig => ({
+  // ✅ Keep everything from app.json (icon, splash, plugins, android settings, etc.)
+  ...config,
+
+  // ✅ You can still force a few must-not-break fields
   name: "Track Analyzer Pro",
   slug: "track-analyzer-pro",
 
   ios: {
+    ...config.ios,
     bundleIdentifier: "com.cfreeman4798.trackanalyzerpro",
     supportsTablet: true,
-    isTabletOnly: false, // ✅ ensures iPhone support is never dropped
+    isTabletOnly: false,
   },
 
   extra: {
+    ...config.extra,
     eas: {
+      ...(config.extra as any)?.eas,
       projectId: "053aacf8-9bb9-41d9-af12-a10076022eba",
     },
   },
-
-  plugins: [
-    [
-      "expo-image-picker",
-      {
-        photosPermission:
-          "Allow Track Analyzer to access your photos to attach lane pictures.",
-        cameraPermission:
-          "Allow Track Analyzer to use your camera to take lane pictures.",
-      },
-    ],
-  ],
-};
-
-export default config;
+});
