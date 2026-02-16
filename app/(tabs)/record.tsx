@@ -561,7 +561,7 @@ export default function RecordScreen() {
 
               <View style={{ padding: 16, gap: 12 }}>
                 <TouchableOpacity style={styles.actionRow} onPress={takePhoto}>
-                  <IconSymbol ios_icon_name="camera" android_material_icon_name="photo_camera" size={20} color={colors.primary} />
+                  <IconSymbol ios_icon_name="camera" android_material_icon_name="photo-camera" size={20} color={colors.primary} />
                   <Text style={styles.actionText}>Take Photo</Text>
                 </TouchableOpacity>
 

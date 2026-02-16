@@ -31,7 +31,7 @@ interface TabConfig {
 
 const TAB_CONFIGS: TabConfig[] = [
   { name: 'tracks', ios_icon_name: 'map.fill', android_material_icon_name: 'map', label: 'Tracks' },
-  { name: 'record', ios_icon_name: 'plus.circle.fill', android_material_icon_name: 'add_circle', label: 'Record' },
+  { name: 'record', ios_icon_name: 'plus.circle.fill', android_material_icon_name: 'add-circle', label: 'Record' },
   { name: 'browse', ios_icon_name: 'magnifyingglass', android_material_icon_name: 'search', label: 'Browse' },
   { name: 'settings', ios_icon_name: 'gearshape.fill', android_material_icon_name: 'settings', label: 'Settings' },
 ];
