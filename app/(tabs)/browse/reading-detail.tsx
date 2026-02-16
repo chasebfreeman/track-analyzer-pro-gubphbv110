@@ -150,8 +150,19 @@ export default function ReadingDetailScreen() {
         )}
 
         {lane.imageUri && (
-          <Image source={{ uri: lane.imageUri }} style={styles.laneImage} />
-        )}
+  <TouchableOpacity
+    activeOpacity={0.9}
+    onPress={() =>
+      router.push({
+        pathname: "/(modals)/photo-viewer",
+        params: { url: lane.imageUri },
+      })
+    }
+  >
+    <Image source={{ uri: lane.imageUri }} style={styles.laneImage} />
+  </TouchableOpacity>
+)}
+
       </View>
     );
   };
